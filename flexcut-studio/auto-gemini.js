@@ -34,7 +34,7 @@ async function autoGeminiRequest(path,key,body,signal,interactions=false){
   const hint=response.status===429?'Kuota atau batas permintaan tercapai.':
    response.status===401||response.status===403?'Periksa izin model, API key, dan setelan billing Google AI Studio.':
    'Periksa ketersediaan model dan konfigurasi Google AI Studio.';
-  throw new Error('Google AI · HTTP '+response.status+'. '+hint);
+  throw Object.assign(new Error('Google AI · HTTP '+response.status+'. '+hint),{status:response.status});
  }
  try{return await response.json()}catch(error){
   throw new Error('Format respons Google AI tidak bisa dibaca.');
@@ -54,12 +54,13 @@ function autoGeminiContext(options){
 }
 async function developAutomaticIdea(options,signal){
  const idea=await autoGeminiJSON(options,
-  'Develop the supplied subject into a usable video outline. Return JSON {topic:string,points:string[]}. Preserve the original topic and user-provided facts. Produce 3-6 concise points with an opening, a logical progression, and an ending appropriate to the requested duration, content type, tone and language. Do not invent statistics, prices, product claims, or endorsements. For educational topics with no details, suggest an angle, questions or observations to explore. Return no markdown.',
-  autoGeminiContext(options),signal);
- if(typeof idea?.topic!=='string'||!Array.isArray(idea.points))throw new Error('Gemini belum menghasilkan poin cerita yang bisa digunakan.');
+  'Develop the supplied subject into a usable video outline. If the topic is blank, invent one specific, feasible topic consistent with the notes and content type. Return JSON {topic:string,points:string[]}. Preserve the original topic and user-provided facts. Produce 3-6 concise points with an opening, a logical progression, and an ending appropriate to the requested duration, content type, tone and language. Do not invent statistics, prices, product claims, or endorsements. Return no markdown.',
+  {...autoGeminiContext(options),direction:motionSkillStyles[options.style]?.direction},signal);
+ const topic=options.topic||(typeof idea?.topic==='string'?idea.topic.trim().slice(0,100):'');
+ if(!topic||!Array.isArray(idea?.points))throw new Error('Gemini belum menghasilkan topik dan poin cerita yang bisa digunakan.');
  const brief=idea.points.filter(point=>typeof point==='string'&&point.trim()).map(point=>point.trim()).join('\n').slice(0,4500);
  if(!brief)throw new Error('Gemini belum menghasilkan poin cerita.');
- return {topic:idea.topic.trim().slice(0,100)||options.topic,brief};
+ return {topic,brief};
 }
 function autoGeminiMediaBlock(result,type){
  const steps=Array.isArray(result?.steps)?result.steps:[];

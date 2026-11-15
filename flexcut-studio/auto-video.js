@@ -2,7 +2,8 @@ const autoVideoStyles={
  pop:{name:'Pop Edukasi',color:'#dcff50',background:'#18213a',caption:'karaoke',transition:'dissolve',motion:'zoom',layout:'framed'},
  film:{name:'Sinematik',color:'#eac58e',background:'#15171c',caption:'lower',transition:'black',motion:'pan',layout:'full'},
  product:{name:'Promo Produk',color:'#50f4c9',background:'#172525',caption:'outline',transition:'slide',motion:'lift',layout:'framed'},
- minimal:{name:'Minimal Editorial',color:'#e9e3d5',background:'#25212a',caption:'clean',transition:'dissolve',motion:'pan',layout:'framed'}
+ minimal:{name:'Minimal Editorial',color:'#e9e3d5',background:'#25212a',caption:'clean',transition:'dissolve',motion:'pan',layout:'framed'},
+ ...motionSkillStyles
 };
 const autoVideoLabels={
  id:{intro:'Kenali',summary:'Inti dari',action:'Cari tahu lebih lanjut',detail:'Sorotan',story:['Awal cerita','Perjalanan','Akhir cerita'],language:'Bahasa Indonesia'},
@@ -34,7 +35,8 @@ renderLibrary=function(){
 function autoStyleCards(context,selectedStyle){
  return Object.entries(autoVideoStyles).map(([id,style])=>`
   <button type="button" class="autoVideoStyle ${id===selectedStyle?'chosen':''}" data-auto-${context}="${id}" style="--template-accent:${style.color};--template-bg:${style.background}">
-   <span class="autoVideoSwatch" aria-hidden="true"><i></i><i></i><i></i></span><strong>${style.name}</strong>
+   ${style.poster?`<img class="autoMotionSwatch" alt="" src="${motionAssetURL(style.poster)}">`:
+    '<span class="autoVideoSwatch" aria-hidden="true"><i></i><i></i><i></i></span>'}<strong>${style.name}</strong>
   </button>`).join('');
 }
 function showAutoVideoBuilder(chosen){
@@ -45,7 +47,7 @@ function showAutoVideoBuilder(chosen){
  modal(`<form id="autoVideoForm">
   <h2>Video Otomatis</h2>
   <div class="autoVideoFields">
-   <label class="featureLabel autoVideoWide">Judul atau topik<input id="autoTopic" required maxlength="100" placeholder="Misalnya, Kenapa kopi punya aroma yang berbeda?"></label>
+   <label class="featureLabel autoVideoWide">Judul atau topik<input id="autoTopic" maxlength="100" placeholder="Misalnya, Kenapa kopi punya aroma yang berbeda?"></label>
    <label class="featureLabel autoVideoWide">Poin isi atau naskah<textarea id="autoBrief" rows="4" maxlength="4500" placeholder="Tulis fakta, manfaat, atau kalimat yang ingin muncul. Pisahkan poin dengan baris baru."></textarea></label>
    <div class="autoVideoWide autoIdeaAction">
     <button id="autoDevelopIdea" type="button" class="secondary editorIconLabel">${editorIcon('sparkles',15)} Kembangkan ide</button>
@@ -63,14 +65,21 @@ function showAutoVideoBuilder(chosen){
   <fieldset class="autoVideoStyleField"><legend>Gaya visual</legend><div class="autoVideoStyleGrid">${autoStyleCards('style',style)}</div></fieldset>
 
   <label class="checkLabel autoGenerateAssets"><input id="autoGenerateAssets" type="checkbox"> Buat foto, musik, dan narasi dengan Google AI</label>
+  <label class="featureLabel" id="autoMotionModeLabel" hidden>Sumber topik dan naskah
+   <select id="autoMotionMode"><option value="local">Gratis · template FlexCut</option><option value="gemini">Gemini AI · pakai kuota Google</option></select>
+  </label>
+  <label class="checkLabel autoGenerateAssets" id="autoMotionAudioLabel" hidden><input id="autoMotionAudio" type="checkbox"> Tambahkan narasi dan musik dari Google AI</label>
+  <p id="autoMotionHint" class="featureNote" hidden></p>
   <fieldset id="autoOwnAssets" class="autoVideoFields">
+   <div class="autoVideoWide autoVideoFields" id="autoVisualAssets">
    <label class="featureLabel autoVideoWide">Unggah foto atau video<input id="autoVisualFiles" type="file" accept="image/*,video/*" multiple></label>
    ${libraryMedia.length?`<fieldset class="autoVideoWide autoAssetPicker"><legend>Pilih dari Media proyek</legend>
     ${libraryMedia.map(a=>`<label class="checkLabel"><input type="checkbox" value="${esc(a.id)}" data-auto-asset> ${esc(a.name)}</label>`).join('')}
    </fieldset>`:''}
+   <label class="checkLabel autoVideoWide"><input id="autoSourceAudio" type="checkbox"> Sertakan suara asli klip video</label>
+   </div>
    <label class="featureLabel">Musik latar (opsional)<input id="autoMusic" type="file" accept="audio/*"></label>
    <label class="featureLabel">Narasi (opsional)<input id="autoNarration" type="file" accept="audio/*"></label>
-   <label class="checkLabel autoVideoWide"><input id="autoSourceAudio" type="checkbox"> Sertakan suara asli klip video</label>
   </fieldset>
   <details class="autoVideoGemini" id="autoGeminiSettings"><summary>Pengaturan Gemini</summary>
    <label class="featureLabel">API key Google AI Studio<input id="autoGeminiKey" type="password" autocomplete="off" placeholder="Isi untuk memakai Gemini"></label>
@@ -78,7 +87,7 @@ function showAutoVideoBuilder(chosen){
    <div class="autoGeminiKeyActions"><button id="saveAutoGeminiKey" type="button" class="secondary">Simpan API key</button>
     <button id="removeAutoGeminiKey" type="button">Hapus key tersimpan</button></div>
    <p id="autoGeminiKeyStatus" class="featureNote" role="status"></p>
-   <label class="checkLabel"><input id="autoGeminiScript" type="checkbox"> Tulis naskah adegan dengan Gemini</label>
+   <label class="checkLabel" id="autoGeminiScriptLabel"><input id="autoGeminiScript" type="checkbox"> Tulis naskah adegan dengan Gemini</label>
    <label class="featureLabel">Suara narator<select id="autoGeminiVoice"><option value="Kore">Kore</option><option value="Puck">Puck</option><option value="Aoede">Aoede</option><option value="Leda">Leda</option></select></label>
    <p class="featureNote">Pengembangan ide dan pembuatan aset mengirim prompt ke Google AI. Pembuatan aset mengikuti akses model dan kuota akun.</p>
   </details>
@@ -104,11 +113,13 @@ function showAutoVideoBuilder(chosen){
     option.setAttribute('aria-pressed',String(option===button));
    }
    update();
+   updateAssetMode();
   };
  }
  update();
  const settings=$('#autoGeminiSettings'),keyInput=$('#autoGeminiKey'),modelInput=$('#autoGeminiModel');
  const savedKeyStatus=$('#autoGeminiKeyStatus'),assetSwitch=$('#autoGenerateAssets');
+ const motionAudio=$('#autoMotionAudio'),motionMode=$('#autoMotionMode');
  const topicInput=$('#autoTopic'),briefInput=$('#autoBrief'),ideaButton=$('#autoDevelopIdea');
  const submitButton=form.querySelector('button[type=submit]');
  const notice=$('#autoVideoError'),ideaStatus=$('#autoIdeaStatus');
@@ -117,6 +128,7 @@ function showAutoVideoBuilder(chosen){
  keyInput.value=storedAutoGeminiKey();
  modelInput.value=autoVideoOptions.geminiModel||'gemini-4-hydrogen';
  assetSwitch.checked=Boolean(autoVideoOptions.generateAssets);
+ motionAudio.checked=Boolean(autoVideoOptions.motionAudio);
  $('#autoGeminiScript').checked=Boolean(autoVideoOptions.geminiScript);
  $('#autoGeminiVoice').value=autoVideoOptions.voice||'Kore';
  function updateKeyStatus(){
@@ -143,20 +155,38 @@ function showAutoVideoBuilder(chosen){
   }catch(error){displayError('API key belum dapat dihapus dari penyimpanan browser.')}
  };
  function updateAssetMode(){
-  $('#autoOwnAssets').disabled=assetSwitch.checked;
-  $('#autoGeminiVoice').disabled=!assetSwitch.checked;
-  if(assetSwitch.checked&&!keyInput.value.trim())settings.open=true;
+  const motion=Boolean(motionSkillStyles[style]),geminiMotion=motion&&motionMode.value==='gemini';
+  const generated=motion?geminiMotion&&motionAudio.checked:assetSwitch.checked;
+  $('#autoOwnAssets').disabled=generated;
+  $('#autoVisualAssets').hidden=motion;
+  const hint=$('#autoMotionHint');
+  hint.hidden=!motion;
+  hint.textContent=geminiMotion?'Gemini menulis adegan. Saat kuota habis, FlexCut memakai naskah template.':
+   'Tanpa API key atau kredit. Isi topik dan poin cerita, atau gunakan contoh bawaan. Tambahkan rekaman narasi atau musik sendiri jika perlu.';
+  $('#autoMotionModeLabel').hidden=!motion;
+  $('#autoMotionAudioLabel').hidden=!geminiMotion;
+  $('#autoGeminiScriptLabel').hidden=motion;
+  assetSwitch.closest('label').hidden=motion;
+  settings.hidden=motion&&!geminiMotion;
+  $('#autoGeminiVoice').disabled=!generated;
+  if((geminiMotion||generated)&&!keyInput.value.trim())settings.open=true;
  }
- assetSwitch.onchange=updateAssetMode;
+ const updateIdeaLabel=()=>{
+  const label=topicInput.value.trim()?'Kembangkan ide':'Buat topik';
+  ideaButton.innerHTML=editorIcon('sparkles',15)+' '+label;
+ };
+ motionMode.onchange=motionAudio.onchange=assetSwitch.onchange=updateAssetMode;
+ topicInput.oninput=updateIdeaLabel;
  keyInput.oninput=updateKeyStatus;
- updateKeyStatus();updateAssetMode();
+ updateKeyStatus();updateAssetMode();updateIdeaLabel();
  function readAutoVideoOptions(){
   return {style,topic:topicInput.value.trim(),brief:briefInput.value.trim(),
    kind:$('#autoKind').value,tone:$('#autoTone').value,language:$('#autoLanguage').value,
    ratio:$('#autoRatio').value,caption:$('#autoCaptionStyle').value,duration:Number($('#autoDuration').value),scene:Number($('#autoSceneLength').value),
    visual:[...$('#autoVisualFiles').files],existing:$$('[data-auto-asset]:checked').map(input=>input.value),
    music:$('#autoMusic').files[0],narration:$('#autoNarration').files[0],sourceAudio:$('#autoSourceAudio').checked,
-   generateAssets:assetSwitch.checked,geminiScript:$('#autoGeminiScript').checked,voice:$('#autoGeminiVoice').value,
+   generateAssets:assetSwitch.checked,motionGemini:motionMode.value==='gemini',motionAudio:motionAudio.checked,
+   geminiScript:$('#autoGeminiScript').checked,voice:$('#autoGeminiVoice').value,
    key:keyInput.value.trim(),model:modelInput.value.trim()};
  }
  let ideaController;
@@ -164,7 +194,17 @@ function showAutoVideoBuilder(chosen){
  ideaButton.onclick=async()=>{
   if(ideaController)return;
   const options=readAutoVideoOptions();
-  if(!options.topic){displayError('Isi judul atau topik untuk dikembangkan.');topicInput.focus();return}
+  const motion=Boolean(motionSkillStyles[options.style]);
+  function applyIdea(result,message){
+   topicInput.value=result.topic;briefInput.value=result.brief;
+   autoVideoDraft=result;
+   updateIdeaLabel();ideaStatus.textContent=message;
+  }
+  if(motion&&!options.motionGemini){
+   displayError('');
+   applyIdea(buildLocalMotionIdea(options),'Topik dan poin template siap diedit.');
+   return;
+  }
   if(!options.key||!options.model){
    displayError('Isi API key dan Model ID Gemini terlebih dahulu.');
    settings.open=true;
@@ -179,11 +219,12 @@ function showAutoVideoBuilder(chosen){
    const result=await developAutomaticIdea(options,controller.signal);
    controller.signal.throwIfAborted();
    if(!form.isConnected)return;
-   topicInput.value=result.topic;briefInput.value=result.brief;
-   autoVideoDraft=result;
-   ideaStatus.textContent='Poin cerita siap diedit.';
+   applyIdea(result,'Topik dan poin cerita siap diedit.');
   }catch(error){
-   if(!controller.signal.aborted){displayError(error.message);ideaStatus.textContent=error.message}
+   if(!controller.signal.aborted&&form.isConnected){
+    if(motion&&[402,429].includes(error.status))applyIdea(buildLocalMotionIdea(options),'Kuota Google terbatas. Topik dan poin diambil dari template.');
+    else{displayError(error.message);ideaStatus.textContent=error.message}
+   }
   }finally{
    ideaController=null;
    if(form.isConnected){
@@ -196,12 +237,13 @@ function showAutoVideoBuilder(chosen){
   e.preventDefault();
   if(ideaController)return;
   const options=readAutoVideoOptions();
-  const usesGemini=options.generateAssets||options.geminiScript||(!options.brief&&Boolean(options.key));
+  const motion=Boolean(motionSkillStyles[options.style]);
+  const usesGemini=motion?options.motionGemini:options.generateAssets||options.geminiScript||(!options.brief&&Boolean(options.key));
   const lines=options.brief.split(/\s+/).filter(Boolean).length;
-  const message=!options.topic?'Isi judul atau topik.':
+  const message=!options.topic&&!motion?'Isi judul atau topik, atau klik Buat topik.':
    usesGemini&&(!options.key||!options.model)?'Isi API key dan Model ID untuk Gemini.':
-   !options.generateAssets&&!options.visual.length&&!options.existing.length?'Tambahkan foto atau video, atau aktifkan pembuatan aset otomatis.':
-   !options.brief&&!usesGemini?'Isi poin isi atau gunakan Gemini untuk menulis.':
+   !motion&&!options.generateAssets&&!options.visual.length&&!options.existing.length?'Tambahkan foto atau video, atau aktifkan pembuatan aset otomatis.':
+   !motion&&!options.brief&&!usesGemini?'Isi poin isi atau gunakan Gemini untuk menulis.':
    !usesGemini&&lines>Math.floor(options.duration*3)?'Naskah terlalu panjang. Tambah durasi atau ringkas poin isi.':'';
   if(message){
    displayError(message);
@@ -210,7 +252,7 @@ function showAutoVideoBuilder(chosen){
   }
   options.useGemini=usesGemini;
   if((clips.length||texts.length||audios.length)&&!confirm('Ganti isi timeline dengan video otomatis? Gunakan Urungkan untuk kembali ke edit sebelumnya.'))return;
-  const {topic,brief,visual,existing,music,narration,key,model,useGemini,...savedOptions}=options;
+  const {topic,brief,visual,existing,music,narration,key,model,useGemini,motionGemini,...savedOptions}=options;
   autoVideoDraft={topic,brief};
   autoVideoOptions={...savedOptions,geminiModel:model};
   try{localStorage.setItem(autoVideoSlotKey,JSON.stringify(autoVideoOptions))}catch(error){}
@@ -241,17 +283,25 @@ function automaticScriptFromBrief(options,count){
  return headings.map((title,i)=>({title,caption:rows.filter((_,index)=>Math.floor(index*count/rows.length)===i).join(' ')}));
 }
 async function automaticGeminiScript(options,count,signal){
- const result=await autoGeminiJSON(options,
-  'Return JSON {scenes:[{title:string,caption:string,visual:string,assetIndex:number}]}. Return exactly '+count+' scenes. Keep titles under 9 words and captions short enough to narrate in each scene. The visual field describes one coherent image with concrete subject, action, and setting. Use distinct shots and a consistent look. Use a zero-based assetIndex from supplied assets where relevant. Follow the requested language. Do not invent prices, statistics, endorsements, or unverifiable claims. Return no markdown.',
-  {...autoGeminiContext(options),scenes:count,secondsPerScene:options.duration/count,
-   assets:options.generateAssets?[]:[...options.existing.map(id=>assets.find(a=>a.id===id)?.name||''),...options.visual.map(file=>file.name)]},
-  signal);
+ const motion=motionSkillStyles[options.style];
+ const context={...autoGeminiContext(options),scenes:count,secondsPerScene:options.duration/count};
+ const common=' Return exactly '+count+' scenes, in the requested language. Keep titles under 9 words and captions short enough to narrate in each scene. Preserve facts the user supplies. Do not invent prices, statistics, endorsements, or unverifiable claims. Return no markdown.';
+ const prompt=motion?
+  'Return JSON {topic:string,scenes:[{title:string,caption:string,motion:{location:string,action:string,camera:string,panel:string,cast:string,speaker:string}}]}. Choose a clear topic if the input topic is blank. The caption is the spoken script. The first scene must hook the viewer. '+motion.direction+
+   ' Pick fields only from the supplied lists. Vary camera and action as the story progresses. Use first for the male character and second for the female character. Keep the speaker in the selected cast.':
+  'Return JSON {scenes:[{title:string,caption:string,visual:string,assetIndex:number}]}. The visual field describes one coherent image with concrete subject, action, and setting. Use distinct shots and a consistent look. Use a zero-based assetIndex from supplied assets where relevant.';
+ const input=motion?{...context,choices:{location:motion.locations,action:motionActions,camera:motionCameras,panel:motionPanels,cast:motionCast,speaker:motionCast.slice(1)}}:
+  {...context,assets:options.generateAssets?[]:[...options.existing.map(id=>assets.find(a=>a.id===id)?.name||''),...options.visual.map(file=>file.name)]};
+ const result=await autoGeminiJSON(options,prompt+common,input,signal);
+ const topic=options.topic||(typeof result?.topic==='string'?result.topic.trim().slice(0,100):'');
  if(!Array.isArray(result?.scenes)||result.scenes.length!==count||result.scenes.some(s=>
-  typeof s?.title!=='string'||!s.title.trim()||typeof s.caption!=='string')){
-  throw new Error('Format naskah Gemini tidak sesuai. Coba lagi atau buat dari poin isi.');
+  typeof s?.title!=='string'||!s.title.trim()||typeof s.caption!=='string'||(motion&&!s.caption.trim()))||!topic){
+  throw new Error('Format topik atau naskah Gemini tidak sesuai. Coba lagi.');
  }
- return result.scenes.map(s=>({title:s.title.trim().slice(0,100),caption:s.caption.trim().slice(0,220),
-  visual:typeof s.visual==='string'?s.visual.trim().slice(0,360):'',assetIndex:s.assetIndex}));
+ const scenes=result.scenes.map((s,index)=>({title:s.title.trim().slice(0,100),caption:s.caption.trim().slice(0,220),
+  visual:typeof s.visual==='string'?s.visual.trim().slice(0,360):'',assetIndex:s.assetIndex,
+  motion:motion?motionSceneDetails(options.style,s.motion,index):undefined}));
+ return {topic,scenes};
 }
 async function automaticAsset(file,type,token){
  const id=uid(),src=URL.createObjectURL(file);
@@ -291,7 +341,7 @@ function automaticTimelineStyle(style,options,source,length,scene,index,start){
   else titleLines[titleLines.length-1]=last?last+' '+word:word;
  }
  const title={id:uid(),trackId:'text',text:titleLines.join('\n'),start:start+.1,duration:Math.max(.1,length-.26),
-  size:styleId==='minimal'?60:66,color:'#ffffff',x:50,y:style.layout==='framed'?16:22,
+  size:styleId==='minimal'?60:66,color:'#ffffff',x:50,y:scene.motion?14:style.layout==='framed'?16:22,
   font:styleId==='film'?'Playfair Display':'Montserrat',weight:800};
  const parts=scene.caption.trim().split(/\s+/).filter(Boolean),captions=[];
  const maxWords=options.ratio==='9:16'?10:14;
@@ -299,12 +349,12 @@ function automaticTimelineStyle(style,options,source,length,scene,index,start){
  const interval=(length-.42)/Math.max(1,count);
  for(let i=0;i<count;i++){
   captions.push({id:uid(),trackId:'text',kind:'subtitle',template:captionId,text:parts.slice(i*maxWords,(i+1)*maxWords).join(' '),
-   start:start+.25+interval*i,duration:interval,x:50,y:style.layout==='framed'?87:85,color:'#ffffff',size:50,
+   start:start+.25+interval*i,duration:interval,x:50,y:scene.motion?89:style.layout==='framed'?87:85,color:'#ffffff',size:50,
    font:captionStyles[captionId].font,weight:captionStyles[captionId].weight});
  }
  const clip={id:uid(),trackId:'video',asset:source.id,name:scene.title,in:0,duration:length,
   speed:source.type==='video'?Math.max(.25,Math.min(1,source.duration/length)):1,scale:100,fit:'cover',rotation:0,opacity:100,volume:options.sourceAudio?100:0,filter:'original',
-  brightness:100,contrast:100,saturation:100,autoScene:{style:styleId,index},
+  brightness:100,contrast:100,saturation:100,autoScene:{style:styleId,index,motion:scene.motion},
   transition:index&&transitions[style.transition]?style.transition:'none',transitionDuration:.4};
  return {clip,title,captions};
 }
@@ -319,39 +369,80 @@ async function buildAutomaticVideo(options){
  try{
   const lengths=automaticSceneLengths(options.duration,options.scene);
   const signal=controller.signal,narrations=[];
+  const motion=motionSkillStyles[options.style];
+  let generatedAudio=motion?options.motionGemini&&options.motionAudio:options.generateAssets;
+  let quotaFallback='';
   status(0,options.useGemini?'Menulis naskah dengan Gemini…':'Menyusun naskah dari poin isi…');
-  const scenes=options.useGemini?await automaticGeminiScript(options,lengths.length,signal):automaticScriptFromBrief(options,lengths.length);
+  let scenes;
+  if(options.useGemini){
+   try{
+    const result=await automaticGeminiScript(options,lengths.length,signal);
+    options={...options,topic:result.topic};
+    scenes=result.scenes;
+   }catch(error){
+    if(!motion||![402,429].includes(error.status))throw error;
+    generatedAudio=false;
+    quotaFallback='Kuota Google terbatas · naskah dari template FlexCut';
+   }
+  }
+  if(!scenes){
+   if(motion)options={...options,...buildLocalMotionIdea(options)};
+   scenes=automaticScriptFromBrief(options,lengths.length);
+   if(motion)scenes.forEach((scene,index)=>{scene.motion=motionSceneDetails(options.style,null,index)});
+  }
   status(1,'Menyiapkan aset…');
   const visuals=[];
   let music=null;
-  if(options.generateAssets){
+  if(motion){
+   status(1,'Menyiapkan karakter dan latar motion…');
+   await prepareMotionStyle(options.style);
+   const previous=assets.find(a=>a.motionStyle===options.style&&a.src);
+   if(previous)visuals.push(previous);
+   else{
+    const response=await fetch(motionAssetURL(motion.poster),{signal});
+    if(!response.ok)throw new Error('Pratinjau gaya motion gagal dimuat.');
+    const file=new File([await response.blob()],motion.name+'.webp',{type:'image/webp'});
+    const asset=await automaticAsset(file,'image',token);
+    asset.motionStyle=options.style;
+    created.push(asset);visuals.push(asset);
+   }
+  }else if(options.generateAssets){
    for(let i=0;i<scenes.length;i++){
     status(1+i/scenes.length,`Membuat foto adegan ${i+1}/${scenes.length}…`);
     const file=await generateAutoGeminiPhoto(options,scenes[i],i,scenes.length,signal);
     const asset=await automaticAsset(file,'image',token);
     created.push(asset);visuals.push(asset);
    }
-   let position=0;
-   for(let i=0;i<scenes.length;i++){
-    status(2+i/scenes.length,`Membuat narasi adegan ${i+1}/${scenes.length}…`);
-    const file=await generateAutoGeminiNarration(options,scenes[i],i,lengths[i],signal);
-    const asset=await automaticAsset(file,'audio',token);
-    created.push(asset);
-    narrations.push({asset,position,length:lengths[i]});
-    position+=lengths[i];
+  }
+  if(generatedAudio){
+   try{
+    let position=0;
+    for(let i=0;i<scenes.length;i++){
+     status(2+i/scenes.length,`Membuat narasi adegan ${i+1}/${scenes.length}…`);
+     const file=await generateAutoGeminiNarration(options,scenes[i],i,lengths[i],signal);
+     const asset=await automaticAsset(file,'audio',token);
+     created.push(asset);
+     narrations.push({asset,position,length:lengths[i]});
+     position+=lengths[i];
+    }
+    status(3,'Membuat musik latar dengan Lyria…');
+    music=await automaticAsset(await generateAutoGeminiMusic(options,signal),'audio',token);
+    created.push(music);
+   }catch(error){
+    if(!motion||![402,429].includes(error.status))throw error;
+    quotaFallback='Kuota audio Google terbatas · video tetap siap dipratinjau';
    }
-   status(3,'Membuat musik latar dengan Lyria…');
-   music=await automaticAsset(await generateAutoGeminiMusic(options,signal),'audio',token);
-   created.push(music);
   }else{
-   for(const id of options.existing){
-    const asset=assets.find(a=>a.id===id&&a.src);
-    if(asset)visuals.push(asset);
-   }
-   for(const file of options.visual){
-    const type=file.type.startsWith('video/')?'video':'image';
-    const asset=await automaticAsset(file,type,token);
-    created.push(asset);visuals.push(asset);
+   if(!motion){
+    for(const id of options.existing){
+     const asset=assets.find(a=>a.id===id&&a.src);
+     if(asset)visuals.push(asset);
+    }
+    for(const file of options.visual){
+     const type=file.type.startsWith('video/')?'video':'image';
+     const asset=await automaticAsset(file,type,token);
+     created.push(asset);visuals.push(asset);
+    }
    }
    if(options.music){
     music=await automaticAsset(options.music,'audio',token);
@@ -379,13 +470,13 @@ async function buildAutomaticVideo(options){
   const outputAudio=[];
   if(music){
    const volume=narrations.length?16:25;
-   const interval=options.generateAssets?Math.max(1,music.duration):options.duration;
+   const interval=generatedAudio?Math.max(1,music.duration):options.duration;
    for(let position=0;position<options.duration;position+=interval){
     outputAudio.push(audio(music,volume,'audio',position,options.duration-position));
    }
   }
   for(const {asset,position,length} of narrations){
-   const speed=options.generateAssets?Math.min(3,Math.max(1,asset.duration/length)):1;
+   const speed=generatedAudio?Math.min(3,Math.max(1,asset.duration/length)):1;
    outputAudio.push(audio(asset,100,music?'auto-narasi':'audio',position,length,speed));
   }
   status(4.7,'Menyiapkan pratinjau…');
@@ -405,12 +496,13 @@ async function buildAutomaticVideo(options){
   if(narrations.length&&!music)timelineTracks.find(track=>track.type==='audio').name='Narasi';
   trackStates={};selected=clips[0].id;activeTimelineTrack='video';time=0;
   $('#projectName').value=options.topic;
+  autoVideoDraft={topic:options.topic,brief:options.brief};
   $('#ratio').value=options.ratio;
   timelineZoomMode='fit';
   setRatio();render();
   progressBar.value=progressBar.max;
   endJob(token);
-  toast('Video siap dipratinjau · '+timeline.length+' adegan');
+  toast(quotaFallback||'Video siap dipratinjau · '+timeline.length+' adegan');
  }catch(error){
   for(const asset of created)if(!assets.includes(asset)){
    URL.revokeObjectURL(asset.src);
@@ -424,6 +516,7 @@ async function buildAutomaticVideo(options){
 function paintAutomaticScene(target,clip,local,frame,sw,sh){
  const style=autoVideoStyles[clip.autoScene.style];
  if(!style)return false;
+ if(style.poster){paintSkillMotion(target,clip,local,frame);return true}
  const w=canvas.width,h=canvas.height,framed=style.layout==='framed',index=clip.autoScene.index;
  const progress=Math.max(0,Math.min(1,local/clip.duration));
  const x=framed?w*.08:0,y=framed?h*.25:0,bw=framed?w*.84:w,bh=framed?h*.49:h;

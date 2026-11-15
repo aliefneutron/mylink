@@ -13,6 +13,7 @@
 .autoVideoSwatch i:nth-child(1) { width: 28%; height: 3px; background: var(--template-accent); }
 .autoVideoSwatch i:nth-child(2) { width: 100%; height: 16px; background: color-mix(in srgb, var(--template-accent) 22%, var(--template-bg)); border-radius: 2px; }
 .autoVideoSwatch i:nth-child(3) { width: 64%; height: 3px; background: var(--template-accent); opacity: .7; }
+.autoMotionSwatch { display: block; width: 100%; height: 54px; object-fit: cover; object-position: center 45%; border-radius: 4px; }
 dialog:has(#autoVideoForm) { width: min(650px, 94vw); max-width: 94vw; max-height: 92dvh; overflow-y: auto; }
 .autoVideoFields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 12px; }
 .autoVideoWide { grid-column: 1 / -1; }
@@ -21,7 +22,7 @@ dialog:has(#autoVideoForm) { width: min(650px, 94vw); max-width: 94vw; max-heigh
 .autoVideoFields input[type=file] { padding: 6px; }
 .autoVideoStyleField, .autoAssetPicker { min-width: 0; margin: 7px 0; padding: 8px; border: 1px solid var(--line); border-radius: 6px; }
 .autoVideoStyleField legend, .autoAssetPicker legend { font-size: 11px; color: var(--muted); }
-.autoVideoStyleField .autoVideoStyleGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.autoVideoStyleField .autoVideoStyleGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .autoAssetPicker { max-height: 115px; overflow: auto; }
 .autoAssetPicker input[type=checkbox] { width: auto; }
 .autoVideoGemini { border: 1px solid var(--line); border-radius: 6px; padding: 9px; margin-top: 8px; font-size: 12px; }
@@ -40,5 +41,7 @@ dialog:has(#autoVideoForm) { width: min(650px, 94vw); max-width: 94vw; max-heigh
 .autoGenerateAssets { display: flex; padding: 7px 0; }
 #autoOwnAssets { border: 0; padding: 0; margin: 0; min-width: 0; }
 #autoOwnAssets[disabled] { display: none; }
+#autoVideoForm [hidden] { display: none; }
+#autoMotionAudio { width: auto; }
 #autoGeminiSettings input[type=checkbox], #autoGenerateAssets { width: auto; }
 .autoGeminiKeyActions button { padding: 5px 8px; }
