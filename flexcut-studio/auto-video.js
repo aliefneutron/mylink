@@ -348,7 +348,7 @@ function automaticTimelineStyle(style,options,source,length,scene,index,start){
  const count=Math.ceil(parts.length/maxWords);
  const interval=(length-.42)/Math.max(1,count);
  for(let i=0;i<count;i++){
-  captions.push({id:uid(),trackId:'text',kind:'subtitle',template:captionId,text:parts.slice(i*maxWords,(i+1)*maxWords).join(' '),
+  captions.push({id:uid(),trackId:'subtitles',kind:'subtitle',template:captionId,text:parts.slice(i*maxWords,(i+1)*maxWords).join(' '),
    start:start+.25+interval*i,duration:interval,x:50,y:scene.motion?89:style.layout==='framed'?87:85,color:'#ffffff',size:50,
    font:captionStyles[captionId].font,weight:captionStyles[captionId].weight});
  }
@@ -491,6 +491,7 @@ async function buildAutomaticVideo(options){
   texts=timeline.flatMap(row=>[row.title,...row.captions]);
   audios=outputAudio;
   timelineTracks=defaultTimelineTracks();
+  timelineTracks.push({id:'subtitles',type:'text',name:'Subtitle'});
   if(music)timelineTracks.find(track=>track.type==='audio').name='Musik';
   if(narrations.length&&music)timelineTracks.push({id:'auto-narasi',type:'audio',name:'Narasi'});
   if(narrations.length&&!music)timelineTracks.find(track=>track.type==='audio').name='Narasi';

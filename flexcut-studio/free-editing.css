@@ -1,0 +1,35 @@
+.mediaPreviewSelection {
+ position: absolute; border: 1px solid var(--accent); pointer-events: none; z-index: 5;
+ transform-origin: center;
+}
+.mediaPreviewSelection[hidden] { display: none; }
+.mediaScale {
+ position: absolute; width: 12px; height: 12px; padding: 0; border-radius: 2px;
+ background: var(--accent); border: 1px solid #182027; pointer-events: auto; touch-action: none;
+}
+.mediaScale.nw { left: -6px; top: -6px; cursor: nwse-resize; }
+.mediaScale.ne { right: -6px; top: -6px; cursor: nesw-resize; }
+.mediaScale.sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.mediaScale.se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+#canvas { touch-action: none; }
+#tracks .clip { touch-action: none; cursor: grab; }
+#tracks .clip.dragging { cursor: grabbing; overflow: visible; }
+.timelineTrimHandle {
+ position: absolute; top: 0; bottom: 0; width: 9px; min-width: 0; padding: 0;
+ border: 0; border-radius: 2px; background: color-mix(in srgb, var(--accent) 60%, #0d1719);
+ cursor: ew-resize; z-index: 4; touch-action: none; opacity: 0;
+}
+.timelineTrim-start { left: 0; }
+.timelineTrim-end { right: 0; }
+.clip:is(:hover,.selected,:focus-within) .timelineTrimHandle { opacity: 1; }
+.timelineTrimHandle:focus-visible { outline: 2px solid white; }
+.timelineEditBadge {
+ position: absolute; left: 4px; top: -24px; padding: 3px 6px; border-radius: 3px;
+ color: var(--text); background: var(--surface); font: 11px monospace; pointer-events: none;
+ white-space: nowrap; border: 1px solid var(--accent); z-index: 15;
+}
+.timelineDropTarget { outline: 1px solid var(--accent); outline-offset: -1px; }
+@media (pointer: coarse) {
+ .timelineTrimHandle { opacity: .65; width: 12px; }
+ .mediaScale { width: 18px; height: 18px; }
+}

@@ -101,12 +101,7 @@ function moveTimelineItem(item,track,position=null,before=null){
  if(before===item)return;
  if(oldId===track.id&&track.type!=='video'&&position===null)return;
  commit();
- if(track.type==='video'){
-  clips.splice(clips.indexOf(item),1);
-  const sequence=clipsOnTrack(track.id);
-  const index=before?clips.indexOf(before):sequence.length?clips.indexOf(sequence.at(-1))+1:clips.length;
-  clips.splice(index,0,item);
- }else if(position!==null)item.start=position;
+ if(position!==null)item.start=position;
  item.trackId=track.id;
  activeTimelineTrack=track.id;selected=item.id;
  time=Math.min(time,total());
