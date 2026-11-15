@@ -29,13 +29,13 @@ document.addEventListener('pointerdown',e=>{if(!e.target.closest('#clipContextMe
 const contextInspector=renderInspector;renderInspector=function(){contextInspector();const c=clips.find(c=>c.id===selected);if(c){const actions=$('.clipFeatureActions');if(actions)actions.insertAdjacentHTML('beforeend','<button class="secondary full" id="clipMoreActions">••• Menu klip</button>');else $('#inspectorContent').insertAdjacentHTML('afterbegin','<button class="secondary full" id="clipMoreActions">••• Menu klip</button>');$('#clipMoreActions').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();showClipContext(c,r.left,r.bottom+6)}}};
 renderInspector();
 
-async function normalizeMP4FrameRate(blob,config,token){
- setJobStatus('Menyempurnakan 60 fps agar frame rate tetap…');
- const engine=await loadConverter(token),input='normalize-'+uid()+'.mp4',output='cfr-'+uid()+'.mp4';
+async function normalizeMP4FrameRate(blob,config,token,intermediate=false){
+ setJobStatus(intermediate?'Menyandikan lapisan gambar ke MP4…':'Menyempurnakan 60 fps agar frame rate tetap…');
+ const engine=await loadConverter(token),input='normalize-'+uid()+(intermediate?'.webm':'.mp4'),output='cfr-'+uid()+'.mp4';
  token.cancelHooks.push(()=>{engine.terminate();ffmpegEngine=null});
  try{await engine.writeFile(input,new Uint8Array(await blob.arrayBuffer()));assertJob(token);
- const code=await engine.exec(['-y','-i',input,'-vf','fps=60','-c:v','libx264','-preset','ultrafast','-b:v',String(config.videoBitrate),'-pix_fmt','yuv420p','-c:a','copy','-movflags','+faststart',output]);
- assertJob(token);if(code!==0)throw new Error('Pemrosesan 60 fps belum berhasil. Coba preset 30 fps.');
+ const code=await engine.exec(['-y','-i',input,'-vf','fps='+config.fps,'-c:v','libx264','-preset','ultrafast','-b:v',String(config.videoBitrate),'-pix_fmt','yuv420p','-c:a',intermediate?'aac':'copy',...(intermediate?['-b:a',String(config.audioBitrate)]:[]),'-movflags','+faststart',output]);
+ assertJob(token);if(code!==0)throw new Error(intermediate?'Lapisan gambar belum dapat disandikan ke MP4. Coba ekspor WebM.':'Pemrosesan 60 fps belum berhasil. Coba preset 30 fps.');
  const data=await engine.readFile(output);return new Blob([data],{type:'video/mp4'});
  }finally{if(engine.loaded){try{await engine.deleteFile(input);await engine.deleteFile(output)}catch(e){}}}
 }
