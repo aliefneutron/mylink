@@ -7,12 +7,13 @@ mediaSelection.innerHTML=['nw','ne','sw','se'].map(corner=>
 previewBox.append(mediaSelection);
 
 function mediaPreviewBounds(clip){
+ if(typeof keyframedItem==='function')clip=keyframedItem(clip,time-clipStart(clip));
  const asset=assets.find(a=>a.id===clip.asset);
  const source=asset?.type==='video'?clipVideo(clip):asset?.src?getImage(asset):null;
  const sw=source?.videoWidth||source?.naturalWidth,sh=source?.videoHeight||source?.naturalHeight;
  if(!sw||!sh)return null;
  const factor=mediaFitScale(sw,sh,canvas.width,canvas.height,clip.rotation,clip.fit||'contain')*clip.scale/100;
- return {x:clip.x??50,y:clip.y??50,width:sw*factor,height:sh*factor};
+ return {x:clip.x??50,y:clip.y??50,width:sw*factor,height:sh*factor,rotation:clip.rotation};
 }
 function syncMediaSelection(){
  const clip=clips.find(c=>c.id===selected);
@@ -21,15 +22,17 @@ function syncMediaSelection(){
  if(mediaSelection.hidden)return;
  Object.assign(mediaSelection.style,{
   left:bounds.x+'%',top:bounds.y+'%',width:bounds.width/canvas.width*100+'%',
-  height:bounds.height/canvas.height*100+'%',transform:'translate(-50%,-50%) rotate('+clip.rotation+'deg)'
+  height:bounds.height/canvas.height*100+'%',transform:'translate(-50%,-50%) rotate('+bounds.rotation+'deg)'
  });
 }
 function beginMediaTransform(event,clip,resize=false){
  if(event.button!==0||playing||exporting||job)return;
  event.preventDefault();event.stopPropagation();
- const rect=canvas.getBoundingClientRect(),original={x:clip.x,y:clip.y,scale:clip.scale};
+ const pose=typeof keyframedItem==='function'?keyframedItem(clip,time-clipStart(clip)):clip;
+ const rect=canvas.getBoundingClientRect(),original={x:pose.x,y:pose.y,scale:pose.scale};
+ const before={x:clip.x,y:clip.y,scale:clip.scale,keyframes:clip.keyframes};
  const point={x:event.clientX,y:event.clientY};
- const center={x:rect.left+rect.width*(clip.x??50)/100,y:rect.top+rect.height*(clip.y??50)/100};
+ const center={x:rect.left+rect.width*(pose.x??50)/100,y:rect.top+rect.height*(pose.y??50)/100};
  const radius=Math.max(8,Math.hypot(point.x-center.x,point.y-center.y));
  selected=clip.id;activeTimelineTrack=itemTrack(clip,'video');renderTimeline();renderInspector();
  let changed=false;
@@ -38,18 +41,18 @@ function beginMediaTransform(event,clip,resize=false){
   const dx=ev.clientX-point.x,dy=ev.clientY-point.y;
   if(!changed&&Math.hypot(dx,dy)<2)return;
   if(!changed){commit();changed=true}
-  if(resize)clip.scale=studioRound(studioClamp(original.scale*Math.hypot(ev.clientX-center.x,ev.clientY-center.y)/radius,5,500));
-  else{
-   clip.x=studioRound(studioClamp((original.x??50)+dx/rect.width*100,-100,200));
-   clip.y=studioRound(studioClamp((original.y??50)+dy/rect.height*100,-100,200));
-  }
+  const values=resize?{scale:studioRound(studioClamp(original.scale*Math.hypot(ev.clientX-center.x,ev.clientY-center.y)/radius,5,500))}:
+   {x:studioRound(studioClamp((original.x??50)+dx/rect.width*100,-100,200)),
+    y:studioRound(studioClamp((original.y??50)+dy/rect.height*100,-100,200))};
+  if(typeof setTransformValues==='function')setTransformValues(clip,values);
+  else Object.assign(clip,values);
   draw();
  };
  const finish=ev=>{
   if(ev.pointerId!==event.pointerId)return;
   window.removeEventListener('pointermove',move);
   window.removeEventListener('pointerup',finish);window.removeEventListener('pointercancel',finish);
-  if(changed&&ev.type==='pointercancel'){Object.assign(clip,original);undoStack.pop()}
+  if(changed&&ev.type==='pointercancel'){Object.assign(clip,before);undoStack.pop()}
   render();
  };
  window.addEventListener('pointermove',move);
@@ -66,7 +69,7 @@ canvas.addEventListener('pointerdown',event=>{
  const hit=activeVideoLayers().reverse().find(({c})=>{
   const b=mediaPreviewBounds(c);
   if(!b)return false;
-  const angle=-c.rotation*Math.PI/180,dx=x-b.x*canvas.width/100,dy=y-b.y*canvas.height/100;
+  const angle=-b.rotation*Math.PI/180,dx=x-b.x*canvas.width/100,dy=y-b.y*canvas.height/100;
   return Math.abs(dx*Math.cos(angle)-dy*Math.sin(angle))<=b.width/2&&Math.abs(dx*Math.sin(angle)+dy*Math.cos(angle))<=b.height/2;
  });
  if(hit)beginMediaTransform(event,hit.c);
@@ -141,6 +144,7 @@ function bindFreeTimelineItem(element,item,type){
    const delta=(lastX-originX+timelineViewport.scrollLeft-initialScroll)/zoom;
    const values=timelineEditValues(item,type,original,mode,delta,anchors,alt);
    Object.assign(item,values);
+   if(mode==='start'&&typeof trimItemKeyframes==='function')trimItemKeyframes(item,original,values.start-original.start,original.duration);
    if(type==='text'&&mode==='start'&&original.words)applyTextTrim(item,original,{start:values.start,duration:values.duration});
    element.style.left=item.start*zoom+'px';sizeTimelineClip(element,item.duration);
    element.style.zIndex='12';
@@ -185,6 +189,7 @@ function bindFreeTimelineItem(element,item,type){
    $$('#tracks .timelineDropTarget').forEach(track=>track.classList.remove('timelineDropTarget'));
    if(mode!=='move'&&type==='text')time=item.start;
    render();
+   if(!changed&&ev.type==='pointerup'&&typeof finishTimelineTap==='function')finishTimelineTap(item,ev);
   };
   window.addEventListener('pointermove',move);window.addEventListener('pointerup',finish);window.addEventListener('pointercancel',finish);
   raf=requestAnimationFrame(scroll);
@@ -243,7 +248,11 @@ renderInspector=function(){
   if(input)input.onchange=event=>{
    const value=Number(event.target.value);
    if(!Number.isFinite(value))return renderInspector();
-   commit();item[key]=studioClamp(value,-100,200);render();
+   pause();
+   commit();
+   if(typeof setTransformValues==='function')setTransformValues(item,{[key]:studioClamp(value,-100,200)});
+   else item[key]=studioClamp(value,-100,200);
+   render();
   };
  }
 };

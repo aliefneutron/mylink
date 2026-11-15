@@ -40,7 +40,8 @@ function syncPreviewTextSelection(){
  const box=studioTextBounds(text);
  Object.assign(textPreviewSelection.style,{
   left:box.left/canvas.width*100+'%',top:box.top/canvas.height*100+'%',
-  width:box.width/canvas.width*100+'%',height:box.height/canvas.height*100+'%'
+  width:box.width/canvas.width*100+'%',height:box.height/canvas.height*100+'%',
+  transform:'rotate('+((typeof keyframedItem==='function'?keyframedItem(text,time-text.start):text).rotation||0)+'deg)'
  });
  textPreviewSelection.hidden=false;
 }
@@ -51,10 +52,12 @@ function startPreviewTextGesture(event,text,mode){
  const rect=canvas.getBoundingClientRect();
  if(!rect.width||!rect.height)return;
  if(selected!==text.id){selected=text.id;renderTimeline();renderInspector()}
- const original={x:text.x,y:text.y,size:text.size};
+ const pose=typeof keyframedItem==='function'?keyframedItem(text,time-text.start):text;
+ const original={x:pose.x,y:pose.y,size:pose.size};
+ const before={x:text.x,y:text.y,size:text.size,keyframes:text.keyframes};
  const start={x:event.clientX,y:event.clientY};
- const centerX=rect.left+rect.width*(text.x??50)/100;
- const centerY=rect.top+rect.height*text.y/100;
+ const centerX=rect.left+rect.width*(pose.x??50)/100;
+ const centerY=rect.top+rect.height*pose.y/100;
  const radius=Math.max(10,Math.hypot(start.x-centerX,start.y-centerY));
  let changed=false;
  previewTextGesture=event.pointerId;
@@ -63,10 +66,12 @@ function startPreviewTextGesture(event,text,mode){
   const dx=ev.clientX-start.x,dy=ev.clientY-start.y;
   if(!changed&&Math.hypot(dx,dy)<2)return;
   if(!changed){commit();changed=true}
-  if(mode==='move'){
-   text.x=studioRound(studioClamp((original.x??50)+dx/rect.width*100,1,99));
-   text.y=studioRound(studioClamp(original.y+dy/rect.height*100,1,99));
-  }else text.size=studioRound(studioClamp(original.size*Math.hypot(ev.clientX-centerX,ev.clientY-centerY)/radius,12,180));
+  const values=mode==='move'?{
+   x:studioRound(studioClamp((original.x??50)+dx/rect.width*100,1,99)),
+   y:studioRound(studioClamp(original.y+dy/rect.height*100,1,99))
+  }:{size:studioRound(studioClamp(original.size*Math.hypot(ev.clientX-centerX,ev.clientY-centerY)/radius,12,180))};
+  if(typeof setTransformValues==='function')setTransformValues(text,values);
+  else Object.assign(text,values);
   draw();
  };
  const finish=ev=>{
@@ -75,7 +80,7 @@ function startPreviewTextGesture(event,text,mode){
   window.removeEventListener('pointermove',move);
   window.removeEventListener('pointerup',finish);
   window.removeEventListener('pointercancel',finish);
-  if(changed&&ev.type==='pointercancel'){Object.assign(text,original);undoStack.pop()}
+  if(changed&&ev.type==='pointercancel'){Object.assign(text,before);undoStack.pop()}
   if(changed)render();else syncPreviewTextSelection();
  };
  window.addEventListener('pointermove',move);
@@ -97,9 +102,11 @@ for(const [button,mode] of [[moveTextButton,'move'],[scaleTextButton,'scale']]){
   const step=event.shiftKey?5:1;
   const direction=['ArrowLeft','ArrowUp'].includes(event.key)?-1:1;
   commit();
-  if(mode==='scale')text.size=studioClamp(text.size+direction*step,12,180);
-  else if(event.key==='ArrowLeft'||event.key==='ArrowRight')text.x=studioClamp((text.x??50)+direction*step,1,99);
-  else text.y=studioClamp(text.y+direction*step,1,99);
+  const pose=typeof keyframedItem==='function'?keyframedItem(text,time-text.start):text;
+  const key=mode==='scale'?'size':['ArrowLeft','ArrowRight'].includes(event.key)?'x':'y';
+  const value=studioClamp((pose[key]??50)+direction*step,mode==='scale'?12:1,mode==='scale'?180:99);
+  if(typeof setTransformValues==='function')setTransformValues(text,{[key]:value});
+  else text[key]=value;
   render();
  };
 }
@@ -111,7 +118,11 @@ canvas.addEventListener('pointerdown',event=>{
  const text=[...texts].reverse().find(item=>{
   if(!visibleStudioText(item))return false;
   const bounds=studioTextBounds(item);
-  return x>=bounds.left&&x<=bounds.left+bounds.width&&y>=bounds.top&&y<=bounds.top+bounds.height;
+  const pose=typeof keyframedItem==='function'?keyframedItem(item,time-item.start):item;
+  const angle=-(pose.rotation||0)*Math.PI/180;
+  const dx=x-bounds.left-bounds.width/2,dy=y-bounds.top-bounds.height/2;
+  return Math.abs(dx*Math.cos(angle)-dy*Math.sin(angle))<=bounds.width/2&&
+   Math.abs(dx*Math.sin(angle)+dy*Math.cos(angle))<=bounds.height/2;
  });
  if(text)startPreviewTextGesture(event,text,'move');
 });

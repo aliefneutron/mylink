@@ -1,5 +1,8 @@
 /* Lucide SVG geometry used by the OpenReel editor. See vendor/openreel/LUCIDE-LICENSE.txt. */
 const editorIconNodes={
+ "chevron-left":[["path",{"d":"m15 18-6-6 6-6"}]],
+ "chevron-right":[["path",{"d":"m9 18 6-6-6-6"}]],
+ "diamond":[["path",{"d":"m12 3 9 9-9 9-9-9Z"}]],
  "plus":[["path",{"d":"M5 12h14"}],["path",{"d":"M12 5v14"}]],
  "chevron-down":[["path",{"d":"m6 9 6 6 6-6"}]],
  "film":[["rect",{"width":"18","height":"18","x":"3","y":"3","rx":"2"}],["path",{"d":"M7 3v18"}],["path",{"d":"M3 7.5h4"}],["path",{"d":"M3 12h18"}],["path",{"d":"M3 16.5h4"}],["path",{"d":"M17 3v18"}],["path",{"d":"M17 7.5h4"}],["path",{"d":"M17 16.5h4"}]],

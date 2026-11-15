@@ -140,6 +140,7 @@ function buildTrackHeader(track,label){
   ${editorIcon(trackKindIcons[track.type],14)}<span>${esc(track.name)}</span></button><div class="trackControlButtons"></div>`;
  const select=label.querySelector('.trackSelect');
  select.onclick=()=>{activeTimelineTrack=track.id;selected=null;renderTimeline();renderInspector()};
+ select.ondblclick=()=>renameTimelineTrack(track);
  const controls=label.querySelector('.trackControlButtons');
  const toggles=track.type==='text'?[['hidden','eye','eye-off']]:[['muted','volume-2','volume-x'],['hidden','eye','eye-off']];
  for(const [property,on,off] of toggles){
@@ -160,7 +161,7 @@ function buildTrackHeader(track,label){
  menu.innerHTML=editorIcon('ellipsis',15);
  menu.setAttribute('aria-haspopup','menu');menu.setAttribute('aria-expanded','false');
  menu.setAttribute('aria-label','Opsi track '+track.name);menu.title='Opsi track '+track.name;
- menu.onclick=()=>showTrackMenu(menu,[['Hapus track','trash-2',()=>confirmRemoveTrack(track)]]);
+ menu.onclick=()=>showTrackMenu(menu,[['Ubah nama track','type',()=>renameTimelineTrack(track)],['Hapus track','trash-2',()=>confirmRemoveTrack(track)]]);
  label.oncontextmenu=e=>{e.preventDefault();menu.click()};
  controls.append(menu);
 }
@@ -192,6 +193,7 @@ function syncTimelineLanes(){
   if(laneAfter.nextElementSibling!==lane)laneAfter.after(lane);
   headerAfter=label;laneAfter=lane;
   label.classList.toggle('currentTrack',activeTimelineTrack===track.id);
+  label.querySelector('.trackSelect span').textContent=track.name;
   label.querySelector('.trackSelect').setAttribute('aria-pressed',String(activeTimelineTrack===track.id));
   lane.onclick=e=>{if(e.target===lane){activeTimelineTrack=track.id;selected=null;renderTimeline();renderInspector()}};
   lane.ondragover=e=>e.preventDefault();

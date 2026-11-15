@@ -39,6 +39,7 @@ function transitionDuration(c){return Math.min(c.transitionDuration||.6,c.durati
 function sourceForClip(c,local,muted=false){const a=assets.find(a=>a.id===c.asset);if(!a?.src)return null;if(a.type!=='video')return getImage(a);const v=clipVideo(c);const duration=Number.isFinite(v.duration)?v.duration:a.duration;if(duration>0){const target=Math.min(duration-.01,Math.max(0,c.in+local*c.speed));if(Math.abs(v.currentTime-target)>(playing?.22:.035))v.currentTime=target;v.playbackRate=c.speed;v.volume=muted||!trackAudible(itemTrack(c,'video'))?0:c.volume/100;v.muted=false;const finished=c.autoScene&&c.in+local*c.speed>=duration;if(playing&&!muted&&!finished){if(v.paused)v.play().catch(()=>{})}else v.pause()}return v}
 function mediaFitScale(sw,sh,w,h,rotation,mode){const radians=rotation*Math.PI/180,bw=Math.abs(Math.cos(radians))*sw+Math.abs(Math.sin(radians))*sh,bh=Math.abs(Math.sin(radians))*sw+Math.abs(Math.cos(radians))*sh;return mode==='cover'?Math.max(w/bw,h/bh):Math.min(w/bw,h/bh)}
 function paintClip(c,local,{muted=false,target=ctx}={}){
+ if(typeof keyframedItem==='function')c=keyframedItem(c,local);
  const source=sourceForClip(c,local,muted),w=canvas.width,h=canvas.height;
  if(!source||(source.readyState!==undefined&&source.readyState<2))return;
  const sw=source.videoWidth||source.naturalWidth,sh=source.videoHeight||source.naturalHeight;
@@ -79,7 +80,7 @@ draw=function(){
   }
  }
  for(const [id,el]of media){if((id.startsWith('video:')&&!activeKeys.has(id))||assets.some(a=>a.id===id))el.pause()}
- for(const t of texts){if(!trackVisible(itemTrack(t,'text'))||time<t.start||time>=t.start+t.duration)continue;if(t.kind==='subtitle'){paintCaption(t);continue}ctx.save();ctx.fillStyle=t.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${t.weight||500} ${t.size*w/1280}px "${t.font||'Georgia'}",serif`;ctx.shadowColor='#0009';ctx.shadowBlur=8;t.text.split('\n').forEach((line,n)=>ctx.fillText(line,w*(t.x??50)/100,h*t.y/100+n*t.size*w/1280*1.2,w*.9));ctx.restore()}
+ for(const originalText of texts){const t=typeof keyframedItem==='function'?keyframedItem(originalText,time-originalText.start):originalText;if(!trackVisible(itemTrack(t,'text'))||time<t.start||time>=t.start+t.duration)continue;if(t.kind==='subtitle'){paintCaption(t);continue}ctx.save();ctx.globalAlpha=(t.opacity??100)/100;ctx.translate(w*(t.x??50)/100,h*t.y/100);ctx.rotate((t.rotation||0)*Math.PI/180);ctx.fillStyle=t.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${t.weight||500} ${t.size*w/1280}px "${t.font||'Georgia'}",serif`;ctx.shadowColor='#0009';ctx.shadowBlur=8;t.text.split('\n').forEach((line,n)=>ctx.fillText(line,0,n*t.size*w/1280*1.2,w*.9));ctx.restore()}
  updateTransport();$('#playhead').style.left=time*zoom+'px';$('.stageTag').style.display=clips.length&&clips.every(c=>c.asset==='coast'&&trackVisible(itemTrack(c,'video')))?'':'none';
 };
 syncAudio=function(){for(const a of audios){if(!a.src)continue;let el=media.get(a.id);if(!el){el=new Audio(a.src);media.set(a.id,el)}const inside=time>=a.start&&time<a.start+a.duration;if(playing&&inside&&trackAudible(itemTrack(a,'audio'))){const target=(a.in||0)+(time-a.start)*(a.speed||1);if(Math.abs(el.currentTime-target)>.22)el.currentTime=target;el.volume=a.volume/100;el.playbackRate=a.speed||1;if(el.paused)el.play().catch(()=>{})}else el.pause()}};

@@ -1,0 +1,20 @@
+.clipNameField { margin-bottom: 9px; }
+.keyframePanel .keyframeActions { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.keyframeActions button {
+ display: inline-flex; align-items: center; justify-content: center;
+ width: 30px; height: 28px; padding: 4px; border: 1px solid var(--line); border-radius: 5px;
+}
+.keyframeActions button.active { color: var(--accent); border-color: var(--accent); }
+.keyframeActions button.active svg { fill: var(--accent-soft); }
+.keyframeActions output { margin-left: auto; font: 11px monospace; min-width: 65px; text-align: right; }
+.keyframePanel .featureNote { line-height: 1.5; margin-top: 8px; }
+.itemKeyframeMarker {
+ position: absolute; bottom: 4px; width: 8px; height: 8px; padding: 0; min-width: 0;
+ border-radius: 1px; border: 1px solid #172023; background: var(--accent);
+ transform: translateX(-50%) rotate(45deg); z-index: 5; cursor: pointer; touch-action: none;
+}
+.itemKeyframeMarker:hover,.itemKeyframeMarker:focus-visible { outline: 2px solid white; }
+.clip:has(.itemKeyframeMarker) .clipName { padding-bottom: 8px; }
+@media (pointer: coarse) {
+ .itemKeyframeMarker { width: 11px; height: 11px; bottom: 3px; }
+}
