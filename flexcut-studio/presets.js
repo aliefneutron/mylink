@@ -1,14 +1,14 @@
 /* Reusable style recipes. Media, words and timing stay with the project. */
 const personalPresetKey='flexcut-personal-templates-v1';
-const presetTextFields=['font','weight','size','color','y'];
-const presetClipFields=['filter','brightness','contrast','saturation','opacity','scale','rotation','fit'];
+const presetTextFields=['font','weight','size','color','x','y'];
+const presetClipFields=['filter','brightness','contrast','saturation','opacity','scale','rotation','fit','studioEffect'];
 const presetPick=(value,fields)=>Object.fromEntries(fields.filter(key=>value?.[key]!==undefined).map(key=>[key,value[key]]));
 function sanitizePersonalPreset(raw){
  if(!raw||typeof raw!=='object'||typeof raw.name!=='string'||!raw.name.trim())throw new Error('Nama template tidak valid');
  const number=(v,base,min,max)=>Number.isFinite(Number(v))?Math.min(max,Math.max(min,Number(v))):base;
- const text=(v={})=>({font:editorFonts.includes(v.font)?v.font:'Montserrat',weight:[400,500,600,700,800].includes(Number(v.weight))?Number(v.weight):700,size:number(v.size,49,8,240),color:/^#[0-9a-f]{6}$/i.test(v.color)?v.color:'#ffffff',y:number(v.y,85,0,100)});
+ const text=(v={})=>({font:editorFonts.includes(v.font)?v.font:'Montserrat',weight:[400,500,600,700,800].includes(Number(v.weight))?Number(v.weight):700,size:number(v.size,49,8,240),color:/^#[0-9a-f]{6}$/i.test(v.color)?v.color:'#ffffff',x:number(v.x,50,1,99),y:number(v.y,85,0,100)});
  const clip=raw.clip||{},transition=raw.transition||{};
- return {id:typeof raw.id==='string'&&/^[a-z0-9_-]{1,80}$/i.test(raw.id)?raw.id:uid(),name:raw.name.trim().slice(0,60),title:text(raw.title),subtitle:{...text(raw.subtitle),template:Object.hasOwn(captionStyles,raw.subtitle?.template)?raw.subtitle.template:'clean'},clip:{filter:Object.hasOwn(filterMap,clip.filter)?clip.filter:'original',brightness:number(clip.brightness,100,0,200),contrast:number(clip.contrast,100,0,200),saturation:number(clip.saturation,100,0,200),opacity:number(clip.opacity,100,0,100),scale:number(clip.scale,100,10,400),rotation:number(clip.rotation,0,-360,360),fit:clip.fit==='cover'?'cover':'contain'},transition:{type:Object.hasOwn(transitions,transition.type)?transition.type:'none',duration:number(transition.duration,.6,.1,1.5)},ratio:['16:9','9:16','1:1'].includes(raw.ratio)?raw.ratio:'16:9'};
+ return {id:typeof raw.id==='string'&&/^[a-z0-9_-]{1,80}$/i.test(raw.id)?raw.id:uid(),name:raw.name.trim().slice(0,60),title:text(raw.title),subtitle:{...text(raw.subtitle),template:Object.hasOwn(captionStyles,raw.subtitle?.template)?raw.subtitle.template:'clean'},clip:{filter:Object.hasOwn(filterMap,clip.filter)?clip.filter:'original',brightness:number(clip.brightness,100,0,200),contrast:number(clip.contrast,100,0,200),saturation:number(clip.saturation,100,0,200),opacity:number(clip.opacity,100,0,100),scale:number(clip.scale,100,10,400),rotation:number(clip.rotation,0,-360,360),fit:clip.fit==='cover'?'cover':'contain',studioEffect:Object.hasOwn(visualEffects,clip.studioEffect)?clip.studioEffect:null},transition:{type:Object.hasOwn(transitions,transition.type)?transition.type:'none',duration:number(transition.duration,.6,.1,1.5)},ratio:['16:9','9:16','1:1'].includes(raw.ratio)?raw.ratio:'16:9'};
 }
 let personalPresets=[],activePersonalPreset=null;
 try{const saved=JSON.parse(localStorage.getItem(personalPresetKey)||'{}');personalPresets=(saved.items||[]).slice(0,100).map(sanitizePersonalPreset);activePersonalPreset=personalPresets.find(p=>p.id===saved.active)?.id||null}catch(error){console.warn('Template pribadi:',error.message)}

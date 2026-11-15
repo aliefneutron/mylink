@@ -1,0 +1,44 @@
+.studioGallery,[data-studio-section]{min-width:0}
+.studioGallery [hidden],#transitionPicker[hidden]{display:none!important}
+.studioSearch{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--input);color:var(--text);font-size:12px}
+.studioCategories{display:flex;gap:5px;margin:8px 0 12px;overflow-x:auto;scrollbar-width:thin;padding-bottom:4px}
+.studioCategories button{white-space:nowrap;padding:5px 7px;font-size:9px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.studioCategories button[aria-pressed=true]{color:var(--accent);background:var(--accent-soft);border-color:var(--accent-border)}
+.studioCardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+[data-studio-section] h3{margin:12px 0 6px;color:var(--muted);font-size:10px;text-transform:uppercase}
+.studioCard{display:block;min-width:0;text-align:left;padding:0 0 6px;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--surface);color:var(--text)}
+.studioCard:hover,.studioCard:focus-visible{border-color:var(--accent)}
+.studioCard canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:var(--bg)}
+.studioCard strong,.studioCard small{display:block;margin:4px 6px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.studioCard strong{font-size:10px}
+.studioCard small{font-size:9px;color:var(--muted)}
+.studioGalleryFooter{display:flex;flex-wrap:wrap;gap:6px;align-items:end;margin-top:10px}
+.studioGalleryFooter button{font-size:10px}
+.studioGalleryFooter .featureLabel{margin:0;flex:1 1 80px;font-size:10px}
+.studioGalleryFooter select{min-width:0}
+#transitionPicker{position:fixed;z-index:140;width:min(340px,calc(100vw - 16px));padding:10px;max-height:min(430px,74dvh);overflow:auto;border:1px solid var(--accent-border);border-radius:9px;background:var(--panel);color:var(--text);box-shadow:0 12px 30px #0008}
+.studioPickerHeading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px}
+.closeStudioPicker{padding:2px 6px}
+.studioTransitionMarker{top:26px;width:21px;height:21px;display:grid;place-items:center;padding:0;transform:translateX(-50%);border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--muted);font-size:13px;line-height:1;opacity:0}
+.studioTransitionMarker.hasTransition,.videoTrack:hover .studioTransitionMarker,.studioTransitionMarker:focus-visible{opacity:1}
+.studioTransitionMarker.hasTransition{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-border)}
+.timelineOverview .studioTransitionMarker:not(.hasTransition){display:none}
+.timelineOverview .studioTransitionMarker.hasTransition{top:43px;width:7px;height:7px;font-size:0}
+@media(hover:none){.studioTransitionMarker{opacity:1}}
+
+.textPreviewSelection{position:absolute;z-index:3;pointer-events:none;outline:1px solid var(--accent);box-shadow:0 0 0 1px #0005}
+.textPreviewSelection[hidden]{display:none}
+.textPreviewSelection button{position:absolute;padding:0;min-width:0;touch-action:none;pointer-events:auto}
+.textPreviewSelection .textPreviewMove{inset:0;border-radius:0;border:0;background:transparent;cursor:move}
+.textPreviewSelection .textPreviewMove:hover{background:#0001}
+.textPreviewSelection .textPreviewScale{right:0;bottom:0;transform:translate(45%,45%);width:15px;height:15px;border-radius:3px;border:1px solid #111;background:var(--accent);cursor:nwse-resize}
+.textPreviewSelection button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.textClip .textTrimHandle{position:absolute;top:0;bottom:0;z-index:2;width:7px;padding:0;border:0;border-radius:0;cursor:ew-resize;touch-action:none;background:color-mix(in srgb,var(--accent) 45%,#171717);opacity:0}
+.textTrim-start{left:0}
+.textTrim-end{right:0}
+.textClip:hover .textTrimHandle,.textClip.selected .textTrimHandle,.textClip:focus-within .textTrimHandle{opacity:1}
+.textClip.compactTimelineClip:not(.textTrimming) .textTrimHandle{display:none}
+.textClip.textTrimming{overflow:visible!important;z-index:6}
+.textTrimTime{position:absolute;left:0;bottom:100%;padding:3px 5px;background:var(--panel);color:var(--text);font-size:10px;white-space:nowrap}
+@media(pointer:coarse){.textPreviewSelection .textPreviewScale{width:22px;height:22px}.textClip .textTrimHandle{width:11px}}
+#transitionPicker .studioCardList{max-height:min(245px,40dvh);overflow:auto;scrollbar-width:thin;padding-right:3px}
