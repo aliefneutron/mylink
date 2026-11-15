@@ -116,21 +116,63 @@ function confirmAssetRemoval(asset){
  };
 }
 
+let selectedLibraryAsset=null;
+
+function selectLibraryAsset(id){
+ selectedLibraryAsset=id;
+ for(const card of $$('#libraryContent [data-asset]')){
+  const selected=card.dataset.asset===id;
+  card.classList.toggle('assetSelected',selected);
+  card.querySelector('.assetSelect')?.setAttribute('aria-pressed',String(selected));
+ }
+}
+
+function bindAssetCard(card,thumb,asset){
+ if(thumb.querySelector('.assetActions'))return;
+ const selectButton=document.createElement('button');
+ selectButton.type='button';
+ selectButton.className='assetSelect';
+ selectButton.setAttribute('aria-label','Pilih '+asset.name);
+ const selected=selectedLibraryAsset===asset.id;
+ selectButton.setAttribute('aria-pressed',String(selected));
+ card.classList.toggle('assetSelected',selected);
+ card.onclick=()=>selectLibraryAsset(asset.id);
+ card.ondblclick=event=>{
+  if(!event.target.closest('.assetActions'))addAsset(asset.id);
+ };
+ card.onkeydown=event=>{
+  if(event.key==='Escape'&&selectedLibraryAsset===asset.id){
+   selectLibraryAsset(null);
+   selectButton.blur();
+  }
+  if(event.code==='Space'&&event.target.closest('button'))event.stopPropagation();
+ };
+
+ const actions=document.createElement('div');
+ actions.className='assetActions';
+ const controls=[
+  ['assetAdd','Tambahkan ke timeline','M5 12h14M12 5v14',()=>addAsset(asset.id)],
+  ['assetPreview','Pratinjau','M8 5l12 7-12 7z',()=>showAssetPreview(asset)],
+  ['assetRemove','Hapus','M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7M14 10v7',()=>confirmAssetRemoval(asset)]
+ ];
+ for(const [className,label,path,action] of controls){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className=className;
+  button.title=label+' '+asset.name;
+  button.setAttribute('aria-label',button.title);
+  button.innerHTML=`<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  button.onclick=event=>{event.stopPropagation();action()};
+  actions.append(button);
+ }
+ thumb.append(selectButton,actions);
+}
+
 function populateAssetCards(){
   if(tab!=='media')return;
   for(const el of $$('[data-asset]')){const asset=assets.find(a=>a.id===el.dataset.asset);if(!asset)continue;const thumb=el.querySelector('.thumb'),poster=asset.frames?.[0]?.src||(asset.type==='image'?asset.src:null);
     if(poster){thumb.querySelector('img,.thumbnailLoading,.mediaFallback')?.remove();thumb.querySelector('span[style]')?.remove();const img=document.createElement('img');img.src=poster;img.alt=asset.name;img.draggable=false;thumb.prepend(img)}else if(asset.type==='video'&&asset.src){const placeholder=thumb.querySelector('.mediaFallback');if(placeholder){placeholder.className='thumbnailLoading';placeholder.removeAttribute('style');placeholder.textContent='◌ Menyiapkan preview…'}requestThumbnails(asset)}
-    if(!thumb.querySelector('.previewAsset')){const b=document.createElement('button');b.className='previewAsset';b.textContent=asset.type==='video'?'▶':asset.type==='audio'?'♫':'⛶';b.title='Pratinjau '+asset.name;b.setAttribute('aria-label','Pratinjau '+asset.name);b.onclick=e=>{e.stopPropagation();showAssetPreview(asset)};thumb.append(b)}
-    if(!thumb.querySelector('.removeAsset')){
-      const button=document.createElement('button');
-      button.type='button';
-      button.className='removeAsset';
-      button.title='Hapus '+asset.name;
-      button.setAttribute('aria-label',button.title);
-      button.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7M14 10v7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      button.onclick=event=>{event.stopPropagation();confirmAssetRemoval(asset)};
-      thumb.append(button);
-    }
+    bindAssetCard(el,thumb,asset);
     const small=el.querySelector('small');if(small)small.textContent=({video:'Video',image:'Foto',audio:'Audio'}[asset.type]||'Media')+(asset.width?' · '+asset.width+' × '+asset.height:' · Lokal');
   }
 }
