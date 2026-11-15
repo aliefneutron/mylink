@@ -33,3 +33,12 @@ dialog:has(#autoVideoForm) { width: min(650px, 94vw); max-width: 94vw; max-heigh
  .autoVideoStyleField .autoVideoStyleGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
  .autoVideoLibrary .autoVideoStyleGrid { grid-template-columns: 1fr; }
 }
+
+.autoIdeaAction, .autoGeminiKeyActions { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.autoIdeaAction { margin-bottom: 4px; }
+.autoIdeaAction .secondary { padding: 7px 10px; }
+.autoGenerateAssets { display: flex; padding: 7px 0; }
+#autoOwnAssets { border: 0; padding: 0; margin: 0; min-width: 0; }
+#autoOwnAssets[disabled] { display: none; }
+#autoGeminiSettings input[type=checkbox], #autoGenerateAssets { width: auto; }
+.autoGeminiKeyActions button { padding: 5px 8px; }

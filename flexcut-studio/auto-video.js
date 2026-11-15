@@ -9,6 +9,7 @@ const autoVideoLabels={
  en:{intro:'Explore',summary:'The essentials of',action:'Find out more',detail:'Highlight',story:['The beginning','The journey','The ending'],language:'English'}
 };
 const autoVideoSlotKey='flexcut-auto-video-settings';
+let autoVideoDraft={topic:'',brief:''};
 let autoVideoOptions={style:'pop',ratio:'9:16',duration:30,scene:6,language:'id',kind:'education',tone:'casual',caption:'template',sourceAudio:false};
 try{
  const saved=JSON.parse(localStorage.getItem(autoVideoSlotKey)||'{}');
@@ -46,6 +47,10 @@ function showAutoVideoBuilder(chosen){
   <div class="autoVideoFields">
    <label class="featureLabel autoVideoWide">Judul atau topik<input id="autoTopic" required maxlength="100" placeholder="Misalnya, Kenapa kopi punya aroma yang berbeda?"></label>
    <label class="featureLabel autoVideoWide">Poin isi atau naskah<textarea id="autoBrief" rows="4" maxlength="4500" placeholder="Tulis fakta, manfaat, atau kalimat yang ingin muncul. Pisahkan poin dengan baris baru."></textarea></label>
+   <div class="autoVideoWide autoIdeaAction">
+    <button id="autoDevelopIdea" type="button" class="secondary editorIconLabel">${editorIcon('sparkles',15)} Kembangkan ide</button>
+    <span id="autoIdeaStatus" class="featureNote" role="status"></span>
+   </div>
    <label class="featureLabel">Jenis konten<select id="autoKind"><option value="education">Edukasi</option><option value="product">Promosi produk</option><option value="story">Cerita singkat</option></select></label>
    <label class="featureLabel">Gaya bercerita<select id="autoTone"><option value="casual">Santai</option><option value="direct">Langsung ke inti</option><option value="story">Bercerita</option></select></label>
    <label class="featureLabel">Bahasa<select id="autoLanguage"><option value="id">Bahasa Indonesia</option><option value="en">English</option></select></label>
@@ -56,7 +61,9 @@ function showAutoVideoBuilder(chosen){
   <label class="featureLabel">Gaya subtitle<select id="autoCaptionStyle"><option value="template">Ikuti gaya visual</option>
    ${Object.entries(captionStyles).map(([id,item])=>`<option value="${id}">${esc(item.name)}</option>`).join('')}</select></label>
   <fieldset class="autoVideoStyleField"><legend>Gaya visual</legend><div class="autoVideoStyleGrid">${autoStyleCards('style',style)}</div></fieldset>
-  <div class="autoVideoFields">
+
+  <label class="checkLabel autoGenerateAssets"><input id="autoGenerateAssets" type="checkbox"> Buat foto, musik, dan narasi dengan Google AI</label>
+  <fieldset id="autoOwnAssets" class="autoVideoFields">
    <label class="featureLabel autoVideoWide">Unggah foto atau video<input id="autoVisualFiles" type="file" accept="image/*,video/*" multiple></label>
    ${libraryMedia.length?`<fieldset class="autoVideoWide autoAssetPicker"><legend>Pilih dari Media proyek</legend>
     ${libraryMedia.map(a=>`<label class="checkLabel"><input type="checkbox" value="${esc(a.id)}" data-auto-asset> ${esc(a.name)}</label>`).join('')}
@@ -64,11 +71,16 @@ function showAutoVideoBuilder(chosen){
    <label class="featureLabel">Musik latar (opsional)<input id="autoMusic" type="file" accept="audio/*"></label>
    <label class="featureLabel">Narasi (opsional)<input id="autoNarration" type="file" accept="audio/*"></label>
    <label class="checkLabel autoVideoWide"><input id="autoSourceAudio" type="checkbox"> Sertakan suara asli klip video</label>
-  </div>
-  <details class="autoVideoGemini"><summary>Tulis naskah dengan Gemini</summary>
+  </fieldset>
+  <details class="autoVideoGemini" id="autoGeminiSettings"><summary>Pengaturan Gemini</summary>
    <label class="featureLabel">API key Google AI Studio<input id="autoGeminiKey" type="password" autocomplete="off" placeholder="Isi untuk memakai Gemini"></label>
    <label class="featureLabel">Model ID<input id="autoGeminiModel" maxlength="80" value="gemini-4-hydrogen" spellcheck="false"></label>
-   <p class="featureNote">Jika diisi, topik, poin isi, dan nama aset dikirim ke Gemini. Media tetap di browser dan key hanya dipakai untuk pembuatan ini.</p>
+   <div class="autoGeminiKeyActions"><button id="saveAutoGeminiKey" type="button" class="secondary">Simpan API key</button>
+    <button id="removeAutoGeminiKey" type="button">Hapus key tersimpan</button></div>
+   <p id="autoGeminiKeyStatus" class="featureNote" role="status"></p>
+   <label class="checkLabel"><input id="autoGeminiScript" type="checkbox"> Tulis naskah adegan dengan Gemini</label>
+   <label class="featureLabel">Suara narator<select id="autoGeminiVoice"><option value="Kore">Kore</option><option value="Puck">Puck</option><option value="Aoede">Aoede</option><option value="Leda">Leda</option></select></label>
+   <p class="featureNote">Pengembangan ide dan pembuatan aset mengirim prompt ke Google AI. Pembuatan aset mengikuti akses model dan kuota akun.</p>
   </details>
   <p id="autoVideoSummary" class="featureNote" role="status"></p>
   <p id="autoVideoError" class="errorDetail" role="alert" hidden></p>
@@ -95,24 +107,113 @@ function showAutoVideoBuilder(chosen){
   };
  }
  update();
- form.onsubmit=e=>{
-  e.preventDefault();
-  const options={style,topic:$('#autoTopic').value.trim(),brief:$('#autoBrief').value.trim(),
+ const settings=$('#autoGeminiSettings'),keyInput=$('#autoGeminiKey'),modelInput=$('#autoGeminiModel');
+ const savedKeyStatus=$('#autoGeminiKeyStatus'),assetSwitch=$('#autoGenerateAssets');
+ const topicInput=$('#autoTopic'),briefInput=$('#autoBrief'),ideaButton=$('#autoDevelopIdea');
+ const submitButton=form.querySelector('button[type=submit]');
+ const notice=$('#autoVideoError'),ideaStatus=$('#autoIdeaStatus');
+ topicInput.value=autoVideoDraft.topic;
+ briefInput.value=autoVideoDraft.brief;
+ keyInput.value=storedAutoGeminiKey();
+ modelInput.value=autoVideoOptions.geminiModel||'gemini-4-hydrogen';
+ assetSwitch.checked=Boolean(autoVideoOptions.generateAssets);
+ $('#autoGeminiScript').checked=Boolean(autoVideoOptions.geminiScript);
+ $('#autoGeminiVoice').value=autoVideoOptions.voice||'Kore';
+ function updateKeyStatus(){
+  const saved=storedAutoGeminiKey();
+  savedKeyStatus.textContent=saved?'API key tersimpan di browser ini.':'API key belum disimpan.';
+  $('#removeAutoGeminiKey').disabled=!saved&&!keyInput.value;
+ }
+ function displayError(message){
+  notice.textContent=message;
+  notice.hidden=!message;
+ }
+ $('#saveAutoGeminiKey').onclick=()=>{
+  const key=keyInput.value.trim();
+  if(!key)return displayError('Masukkan API key terlebih dahulu.');
+  try{
+   localStorage.setItem(autoGeminiKeySlot,key);
+   displayError('');updateKeyStatus();
+  }catch(error){displayError('Browser ini tidak dapat menyimpan API key.')}
+ };
+ $('#removeAutoGeminiKey').onclick=()=>{
+  try{
+   localStorage.removeItem(autoGeminiKeySlot);
+   keyInput.value='';updateKeyStatus();displayError('');
+  }catch(error){displayError('API key belum dapat dihapus dari penyimpanan browser.')}
+ };
+ function updateAssetMode(){
+  $('#autoOwnAssets').disabled=assetSwitch.checked;
+  $('#autoGeminiVoice').disabled=!assetSwitch.checked;
+  if(assetSwitch.checked&&!keyInput.value.trim())settings.open=true;
+ }
+ assetSwitch.onchange=updateAssetMode;
+ keyInput.oninput=updateKeyStatus;
+ updateKeyStatus();updateAssetMode();
+ function readAutoVideoOptions(){
+  return {style,topic:topicInput.value.trim(),brief:briefInput.value.trim(),
    kind:$('#autoKind').value,tone:$('#autoTone').value,language:$('#autoLanguage').value,
    ratio:$('#autoRatio').value,caption:$('#autoCaptionStyle').value,duration:Number($('#autoDuration').value),scene:Number($('#autoSceneLength').value),
    visual:[...$('#autoVisualFiles').files],existing:$$('[data-auto-asset]:checked').map(input=>input.value),
    music:$('#autoMusic').files[0],narration:$('#autoNarration').files[0],sourceAudio:$('#autoSourceAudio').checked,
-   key:$('#autoGeminiKey').value.trim(),model:$('#autoGeminiModel').value.trim()};
-  const error=$('#autoVideoError');
-  const words=options.brief.split(/\s+/).filter(Boolean).length;
-  const message=!options.topic?'Isi judul atau topik.':!options.visual.length&&!options.existing.length?'Tambahkan setidaknya satu foto atau video.':
-   !options.brief&&!options.key?'Isi setidaknya satu poin isi atau hubungkan Gemini untuk menulis naskah.':
-   options.key&&!options.model?'Isi Model ID untuk Gemini.':!options.key&&words>Math.floor(options.duration*3)?'Naskah terlalu panjang untuk durasi ini. Tambah durasi atau ringkas poin isi.':'';
-  if(message){error.textContent=message;error.hidden=false;return}
+   generateAssets:assetSwitch.checked,geminiScript:$('#autoGeminiScript').checked,voice:$('#autoGeminiVoice').value,
+   key:keyInput.value.trim(),model:modelInput.value.trim()};
+ }
+ let ideaController;
+ $('#modal').addEventListener('close',()=>ideaController?.abort(),{once:true});
+ ideaButton.onclick=async()=>{
+  if(ideaController)return;
+  const options=readAutoVideoOptions();
+  if(!options.topic){displayError('Isi judul atau topik untuk dikembangkan.');topicInput.focus();return}
+  if(!options.key||!options.model){
+   displayError('Isi API key dan Model ID Gemini terlebih dahulu.');
+   settings.open=true;
+   keyInput.focus();
+   return;
+  }
+  const controller=ideaController=new AbortController();
+  ideaButton.disabled=submitButton.disabled=true;
+  topicInput.readOnly=briefInput.readOnly=true;
+  displayError('');ideaStatus.textContent='Mengembangkan ide dengan Gemini…';
+  try{
+   const result=await developAutomaticIdea(options,controller.signal);
+   controller.signal.throwIfAborted();
+   if(!form.isConnected)return;
+   topicInput.value=result.topic;briefInput.value=result.brief;
+   autoVideoDraft=result;
+   ideaStatus.textContent='Poin cerita siap diedit.';
+  }catch(error){
+   if(!controller.signal.aborted){displayError(error.message);ideaStatus.textContent=error.message}
+  }finally{
+   ideaController=null;
+   if(form.isConnected){
+    ideaButton.disabled=submitButton.disabled=false;
+    topicInput.readOnly=briefInput.readOnly=false;
+   }
+  }
+ };
+ form.onsubmit=e=>{
+  e.preventDefault();
+  if(ideaController)return;
+  const options=readAutoVideoOptions();
+  const usesGemini=options.generateAssets||options.geminiScript||(!options.brief&&Boolean(options.key));
+  const lines=options.brief.split(/\s+/).filter(Boolean).length;
+  const message=!options.topic?'Isi judul atau topik.':
+   usesGemini&&(!options.key||!options.model)?'Isi API key dan Model ID untuk Gemini.':
+   !options.generateAssets&&!options.visual.length&&!options.existing.length?'Tambahkan foto atau video, atau aktifkan pembuatan aset otomatis.':
+   !options.brief&&!usesGemini?'Isi poin isi atau gunakan Gemini untuk menulis.':
+   !usesGemini&&lines>Math.floor(options.duration*3)?'Naskah terlalu panjang. Tambah durasi atau ringkas poin isi.':'';
+  if(message){
+   displayError(message);
+   if(usesGemini&&(!options.key||!options.model))settings.open=true;
+   return;
+  }
+  options.useGemini=usesGemini;
   if((clips.length||texts.length||audios.length)&&!confirm('Ganti isi timeline dengan video otomatis? Gunakan Urungkan untuk kembali ke edit sebelumnya.'))return;
-  const {topic,brief,visual,existing,music,narration,key,model,...settings}=options;
-  autoVideoOptions=settings;
-  try{localStorage.setItem(autoVideoSlotKey,JSON.stringify(settings))}catch(error){}
+  const {topic,brief,visual,existing,music,narration,key,model,useGemini,...savedOptions}=options;
+  autoVideoDraft={topic,brief};
+  autoVideoOptions={...savedOptions,geminiModel:model};
+  try{localStorage.setItem(autoVideoSlotKey,JSON.stringify(autoVideoOptions))}catch(error){}
   $('#modal').close();
   buildAutomaticVideo(options);
  };
@@ -139,33 +240,18 @@ function automaticScriptFromBrief(options,count){
  if(count===1)return [{title:options.topic,caption:rows.join(' ')}];
  return headings.map((title,i)=>({title,caption:rows.filter((_,index)=>Math.floor(index*count/rows.length)===i).join(' ')}));
 }
-async function automaticGeminiScript(options,count,token){
- const controller=new AbortController();
- token.cancelHooks.push(()=>controller.abort());
- let response;
- try{
-  response=await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',{
-   method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+options.key},
-   body:JSON.stringify({model:options.model,response_format:{type:'json_object'},messages:[
-    {role:'system',content:'Return JSON {scenes:[{title:string,caption:string,assetIndex:number}]}. Return exactly '+count+' scenes. Keep titles under 9 words and captions short enough to read in their duration. Use a zero-based assetIndex from the supplied asset list where relevant. Follow the requested language. Respect user facts and do not invent prices, statistics, endorsements, or factual claims absent from supplied notes. Do not return markdown.'},
-    {role:'user',content:JSON.stringify({topic:options.topic,notes:options.brief,language:autoVideoLabels[options.language].language,
-     contentType:options.kind,tone:options.tone,visualStyle:autoVideoStyles[options.style].name,durationSeconds:options.duration,
-     assets:[...options.existing.map(id=>assets.find(a=>a.id===id)?.name||''),...options.visual.map(file=>file.name)]})}
-   ]})
-  });
- }catch(error){
-  if(token.cancelled)throw error;
-  throw new Error('Gemini tidak dapat dihubungi. Periksa koneksi dan pembatasan API key.');
- }
- if(!response.ok)throw new Error('Gemini mengembalikan HTTP '+response.status+'. Periksa API key, model, dan kuota.');
- const body=await response.json();
- let result;
- try{result=JSON.parse(body.choices?.[0]?.message?.content||'');}catch(error){}
+async function automaticGeminiScript(options,count,signal){
+ const result=await autoGeminiJSON(options,
+  'Return JSON {scenes:[{title:string,caption:string,visual:string,assetIndex:number}]}. Return exactly '+count+' scenes. Keep titles under 9 words and captions short enough to narrate in each scene. The visual field describes one coherent image with concrete subject, action, and setting. Use distinct shots and a consistent look. Use a zero-based assetIndex from supplied assets where relevant. Follow the requested language. Do not invent prices, statistics, endorsements, or unverifiable claims. Return no markdown.',
+  {...autoGeminiContext(options),scenes:count,secondsPerScene:options.duration/count,
+   assets:options.generateAssets?[]:[...options.existing.map(id=>assets.find(a=>a.id===id)?.name||''),...options.visual.map(file=>file.name)]},
+  signal);
  if(!Array.isArray(result?.scenes)||result.scenes.length!==count||result.scenes.some(s=>
   typeof s?.title!=='string'||!s.title.trim()||typeof s.caption!=='string')){
   throw new Error('Format naskah Gemini tidak sesuai. Coba lagi atau buat dari poin isi.');
  }
- return result.scenes.map(s=>({title:s.title.trim().slice(0,100),caption:s.caption.trim().slice(0,220),assetIndex:s.assetIndex}));
+ return result.scenes.map(s=>({title:s.title.trim().slice(0,100),caption:s.caption.trim().slice(0,220),
+  visual:typeof s.visual==='string'?s.visual.trim().slice(0,360):'',assetIndex:s.assetIndex}));
 }
 async function automaticAsset(file,type,token){
  const id=uid(),src=URL.createObjectURL(file);
@@ -224,42 +310,85 @@ function automaticTimelineStyle(style,options,source,length,scene,index,start){
 }
 async function buildAutomaticVideo(options){
  const token=beginJob('Membuat video otomatis');
- const created=[];
+ const created=[],controller=new AbortController();
+ token.cancelHooks.push(()=>controller.abort());
  const progressBar=document.createElement('progress');
- progressBar.id='autoVideoProgress';progressBar.max=4;progressBar.value=0;
+ progressBar.id='autoVideoProgress';progressBar.max=5;progressBar.value=0;progressBar.setAttribute('aria-label','Progres pembuatan video');
  $('.jobSpinner').replaceWith(progressBar);
  const status=(step,message)=>{assertJob(token);progressBar.value=step;setJobStatus(message)};
  try{
   const lengths=automaticSceneLengths(options.duration,options.scene);
-  status(0,options.key?'Menulis naskah dengan Gemini…':'Menyusun naskah dari poin isi…');
-  const scenes=options.key?await automaticGeminiScript(options,lengths.length,token):automaticScriptFromBrief(options,lengths.length);
-  status(1,'Menyiapkan foto, video, dan audio…');
-  const selectedAssets=options.existing.map(id=>assets.find(a=>a.id===id&&a.src)).filter(Boolean);
-  for(const file of options.visual){
-   const type=file.type.startsWith('video/')?'video':'image';
-   created.push(await automaticAsset(file,type,token));
+  const signal=controller.signal,narrations=[];
+  status(0,options.useGemini?'Menulis naskah dengan Gemini…':'Menyusun naskah dari poin isi…');
+  const scenes=options.useGemini?await automaticGeminiScript(options,lengths.length,signal):automaticScriptFromBrief(options,lengths.length);
+  status(1,'Menyiapkan aset…');
+  const visuals=[];
+  let music=null;
+  if(options.generateAssets){
+   for(let i=0;i<scenes.length;i++){
+    status(1+i/scenes.length,`Membuat foto adegan ${i+1}/${scenes.length}…`);
+    const file=await generateAutoGeminiPhoto(options,scenes[i],i,scenes.length,signal);
+    const asset=await automaticAsset(file,'image',token);
+    created.push(asset);visuals.push(asset);
+   }
+   let position=0;
+   for(let i=0;i<scenes.length;i++){
+    status(2+i/scenes.length,`Membuat narasi adegan ${i+1}/${scenes.length}…`);
+    const file=await generateAutoGeminiNarration(options,scenes[i],i,lengths[i],signal);
+    const asset=await automaticAsset(file,'audio',token);
+    created.push(asset);
+    narrations.push({asset,position,length:lengths[i]});
+    position+=lengths[i];
+   }
+   status(3,'Membuat musik latar dengan Lyria…');
+   music=await automaticAsset(await generateAutoGeminiMusic(options,signal),'audio',token);
+   created.push(music);
+  }else{
+   for(const id of options.existing){
+    const asset=assets.find(a=>a.id===id&&a.src);
+    if(asset)visuals.push(asset);
+   }
+   for(const file of options.visual){
+    const type=file.type.startsWith('video/')?'video':'image';
+    const asset=await automaticAsset(file,type,token);
+    created.push(asset);visuals.push(asset);
+   }
+   if(options.music){
+    music=await automaticAsset(options.music,'audio',token);
+    created.push(music);
+   }
+   if(options.narration){
+    const asset=await automaticAsset(options.narration,'audio',token);
+    created.push(asset);narrations.push({asset,position:0,length:options.duration});
+   }
   }
-  const visuals=[...selectedAssets,...created];
   if(!visuals.length)throw new Error('Tidak ada foto atau video yang dapat digunakan.');
-  const music=options.music?await automaticAsset(options.music,'audio',token):null;
-  if(music)created.push(music);
-  const narration=options.narration?await automaticAsset(options.narration,'audio',token):null;
-  if(narration)created.push(narration);
-  status(2,'Membangun adegan dan teks di timeline…');
+  status(4,'Menyusun hasil ke timeline…');
   const style=autoVideoStyles[options.style];
   let start=0;
   const timeline=lengths.map((length,index)=>{
-   const scene=scenes[index],picked=Number.isInteger(scene.assetIndex)?visuals[scene.assetIndex]:null;
+   const scene=scenes[index],picked=!options.generateAssets&&Number.isInteger(scene.assetIndex)?visuals[scene.assetIndex]:null;
    const data=automaticTimelineStyle(style,options,picked||visuals[index%visuals.length],length,scene,index,start);
    start+=length;
    return data;
   });
-  const audio=(source,volume,trackId)=>({
-   id:uid(),trackId,assetId:source.id,name:source.name,src:source.src,start:0,in:0,speed:1,
-   duration:Math.min(options.duration,source.duration),sourceDuration:source.duration,type:'audio',
-   volume
+  const audio=(source,volume,trackId,position,length,speed=1)=>({
+   id:uid(),trackId,assetId:source.id,name:source.name,src:source.src,start:position,in:0,speed,
+   duration:Math.min(length,source.duration/speed),sourceDuration:source.duration,type:'audio',volume
   });
-  status(3,'Menyiapkan pratinjau…');
+  const outputAudio=[];
+  if(music){
+   const volume=narrations.length?16:25;
+   const interval=options.generateAssets?Math.max(1,music.duration):options.duration;
+   for(let position=0;position<options.duration;position+=interval){
+    outputAudio.push(audio(music,volume,'audio',position,options.duration-position));
+   }
+  }
+  for(const {asset,position,length} of narrations){
+   const speed=options.generateAssets?Math.min(3,Math.max(1,asset.duration/length)):1;
+   outputAudio.push(audio(asset,100,music?'auto-narasi':'audio',position,length,speed));
+  }
+  status(4.7,'Menyiapkan pratinjau…');
   for(const visual of visuals.filter(asset=>asset.type==='image')){
    const image=getImage(visual);
    if(!image.complete)await image.decode();
@@ -269,16 +398,17 @@ async function buildAutomaticVideo(options){
   assets.push(...created);
   clips=timeline.map(row=>row.clip);
   texts=timeline.flatMap(row=>[row.title,...row.captions]);
-  audios=[music&&audio(music,narration?16:25,'audio'),narration&&audio(narration,100,music?'auto-narasi':'audio')].filter(Boolean);
+  audios=outputAudio;
   timelineTracks=defaultTimelineTracks();
   if(music)timelineTracks.find(track=>track.type==='audio').name='Musik';
-  if(narration&&music)timelineTracks.push({id:'auto-narasi',type:'audio',name:'Narasi'});
-  if(narration&&!music)timelineTracks.find(track=>track.type==='audio').name='Narasi';
+  if(narrations.length&&music)timelineTracks.push({id:'auto-narasi',type:'audio',name:'Narasi'});
+  if(narrations.length&&!music)timelineTracks.find(track=>track.type==='audio').name='Narasi';
   trackStates={};selected=clips[0].id;activeTimelineTrack='video';time=0;
   $('#projectName').value=options.topic;
   $('#ratio').value=options.ratio;
   timelineZoomMode='fit';
   setRatio();render();
+  progressBar.value=progressBar.max;
   endJob(token);
   toast('Video siap dipratinjau · '+timeline.length+' adegan');
  }catch(error){
@@ -324,3 +454,5 @@ function paintAutomaticScene(target,clip,local,frame,sw,sh){
  target.restore();
  return true;
 }
+
+draw();
