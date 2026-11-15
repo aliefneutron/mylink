@@ -111,18 +111,23 @@ function applyStudioTransition(clip,id,duration){
 
 function applyStudioEffect(clip,id){
  if(!clip){toast('Pilih klip foto atau video di timeline');return}
+ if(exporting||job)return;
+ pause();
+ if(time<clipStart(clip)||time>=clipStart(clip)+clip.duration)time=clipStart(clip);
+ const pose=typeof keyframedItem==='function'?keyframedItem(clip,time-clipStart(clip)):clip;
+ let changes;
  commit();
  if(id==='reset'){
-  delete clip.studioEffect;
-  Object.assign(clip,{scale:100,rotation:0,opacity:100,filter:'original',brightness:100,contrast:100,saturation:100});
+  changes={scale:100,rotation:0,opacity:100,filter:'original',studioEffect:null,brightness:100,contrast:100,saturation:100};
  }else{
   const style=visualEffects[id].style;
-  if(style==='close-up')clip.scale=125;
-  else if(style==='rotate')clip.rotation=(clip.rotation+90)%360;
-  else if(style==='opacity')clip.opacity=70;
-  else clip.studioEffect=id;
+  if(style==='close-up')changes={scale:125};
+  else if(style==='rotate')changes={rotation:(pose.rotation+90)%360};
+  else if(style==='opacity')changes={opacity:70};
+  else changes={studioEffect:id};
  }
- if(time<clipStart(clip)||time>=clipStart(clip)+clip.duration)time=clipStart(clip);
+ if(typeof setTransformValues==='function')setTransformValues(clip,changes);
+ else Object.assign(clip,changes);
  render();
  toast(id==='reset'?'Tampilan klip direset':visualEffects[id].name+' diterapkan');
 }
@@ -131,6 +136,7 @@ function renderStudioLibrary(root,kind,clip,{popover=false}={}){
  const targetClip=()=>popover?clip:clips.find(item=>item.id===selected);
  const state=popover?{group:'Semua',query:''}:studioFilters[kind];
  const isTransition=kind==='transition';
+ const shownClip=clip&&typeof keyframedItem==='function'?keyframedItem(clip,time-clipStart(clip)):clip;
  const entries=Object.values(isTransition?visualTransitionCatalog:visualEffects);
  const groups=isTransition?transitionGroups:effectGroups;
  const currentDuration=clip?.transitionDuration||.6;
@@ -145,7 +151,7 @@ function renderStudioLibrary(root,kind,clip,{popover=false}={}){
   </div>
   <div class="studioCardList">
    ${groups.map(group=>`<section data-studio-section="${group}"><h3>${group}</h3><div class="studioCardGrid">
-     ${entries.filter(item=>item.group===group).map(item=>`<button type="button" class="studioCard ${(isTransition?clip?.transition:clip?.studioEffect)===item.id?'chosen':''}" data-studio-id="${item.id}" aria-pressed="${(isTransition?clip?.transition:clip?.studioEffect)===item.id}">
+     ${entries.filter(item=>item.group===group).map(item=>`<button type="button" class="studioCard ${(isTransition?clip?.transition:shownClip?.studioEffect)===item.id?'chosen':''}" data-studio-id="${item.id}" aria-pressed="${(isTransition?clip?.transition:shownClip?.studioEffect)===item.id}">
       <canvas width="160" height="90" aria-hidden="true"></canvas><strong>${item.name}</strong>
       <small>${item.description||transitionDescriptions[item.id]||item.group}</small></button>`).join('')}
    </div></section>`).join('')}

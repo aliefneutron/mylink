@@ -6,6 +6,8 @@
 }
 .keyframeActions button.active { color: var(--accent); border-color: var(--accent); }
 .keyframeActions button.active svg { fill: var(--accent-soft); }
+#timelineKeyframe.active { color: var(--accent); }
+#timelineKeyframe.active svg { fill: var(--accent-soft); }
 .keyframeActions output { margin-left: auto; font: 11px monospace; min-width: 65px; text-align: right; }
 .keyframePanel .featureNote { line-height: 1.5; margin-top: 8px; }
 .itemKeyframeMarker {

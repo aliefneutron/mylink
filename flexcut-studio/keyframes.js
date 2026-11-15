@@ -1,14 +1,30 @@
-const videoKeyframeDefaults={x:50,y:50,scale:100,rotation:0,opacity:100};
+const videoKeyframeDefaults={x:50,y:50,scale:100,rotation:0,opacity:100,brightness:100,contrast:100,saturation:100};
 const textKeyframeDefaults={x:50,y:50,size:65,rotation:0,opacity:100};
 const keyframeTolerance=1/60;
 function keyframeDefaults(item){return typeof item.text==='string'?textKeyframeDefaults:videoKeyframeDefaults}
+function discreteKeyframeDefaults(item){return typeof item.text==='string'?{}:{filter:'original',studioEffect:null}}
+function keyframeSnapshot(item,changes={},local=keyframeLocalTime(item)){
+ const pose=keyframedItem(item,local);
+ const values=Object.fromEntries(Object.entries(keyframeDefaults(item)).map(([key,fallback])=>
+  [key,changes[key]??pose[key]??fallback]));
+ for(const [key,fallback] of Object.entries(discreteKeyframeDefaults(item))){
+  values[key]=Object.hasOwn(changes,key)?changes[key]:pose[key]??fallback;
+ }
+ return values;
+}
 function keyframeLocalTime(item){return studioClamp(time-(clips.includes(item)?clipStart(item):item.start),0,item.duration)}
 function itemKeyframes(item){
  const defaults=keyframeDefaults(item);
  return (Array.isArray(item.keyframes)?item.keyframes:[])
   .filter(frame=>Number.isFinite(frame.time)&&frame.values&&typeof frame.values==='object')
-  .map(frame=>({...frame,values:Object.fromEntries(Object.keys(defaults).map(key=>
-   [key,Number.isFinite(frame.values[key])?frame.values[key]:item[key]??defaults[key]]))}))
+  .map(frame=>{
+   const values=Object.fromEntries(Object.keys(defaults).map(key=>
+    [key,Number.isFinite(frame.values[key])?frame.values[key]:item[key]??defaults[key]]));
+   for(const [key,fallback] of Object.entries(discreteKeyframeDefaults(item))){
+    values[key]=Object.hasOwn(frame.values,key)?frame.values[key]:item[key]??fallback;
+   }
+   return {...frame,values};
+  })
   .sort((a,b)=>a.time-b.time);
 }
 function keyframedItem(item,local){
@@ -19,20 +35,23 @@ function keyframedItem(item,local){
  if(local<=left.time)return {...base,...left.values};
  if(local>=right.time)return {...base,...right.values};
  for(let i=1;i<frames.length;i++){
-  if(local<=frames[i].time){left=frames[i-1];right=frames[i];break}
+  if(local<frames[i].time){left=frames[i-1];right=frames[i];break}
  }
  let progress=(local-left.time)/(right.time-left.time);
  if(left.easing==='ease')progress=progress*progress*(3-2*progress);
  if(left.easing==='hold')progress=0;
  const values={};
  for(const key of Object.keys(defaults))values[key]=left.values[key]+(right.values[key]-left.values[key])*progress;
+ for(const key of Object.keys(discreteKeyframeDefaults(item)))values[key]=(local>=right.time?right:left).values[key];
  return {...base,...values};
 }
 function saveItemKeyframe(item,values,local=keyframeLocalTime(item)){
- const frames=itemKeyframes(item),at=studioRound(local);
+ const frames=itemKeyframes(item),at=Math.round(local*30)/30;
  const existing=frames.find(frame=>Math.abs(frame.time-at)<keyframeTolerance);
- const pose=keyframedItem(item,local),defaults=keyframeDefaults(item);
- const snapshot=Object.fromEntries(Object.keys(defaults).map(key=>[key,values[key]??pose[key]??defaults[key]]));
+ const snapshot=keyframeSnapshot(item,values,local);
+ if(!frames.length&&at>keyframeTolerance){
+  frames.push({time:0,values:keyframeSnapshot(item,{},0),easing:'hold'});
+ }
  if(existing){existing.values=snapshot}
  else frames.push({time:at,values:snapshot,easing:'linear'});
  item.keyframes=frames.sort((a,b)=>a.time-b.time);
@@ -45,8 +64,7 @@ function trimItemKeyframes(item,original,from,to){
  const frames=itemKeyframes(original);
  if(!frames.length)return;
  const snapshot=at=>{
-  const pose=keyframedItem(original,at);
-  return Object.fromEntries(Object.keys(keyframeDefaults(original)).map(key=>[key,pose[key]]));
+  return keyframeSnapshot(original,{},at);
  };
  const start={time:0,values:snapshot(from),easing:(frames.findLast(frame=>frame.time<=from)||frames[0]).easing||'linear'};
  const end={time:studioRound(to-from),values:snapshot(to),easing:'linear'};
@@ -127,12 +145,59 @@ renderTimeline=function(){
 };
 
 function currentKeyframeItem(){return [...clips,...texts].find(item=>item.id===selected)}
+function toggleEditorKeyframe(item=currentKeyframeItem()){
+ if(!item||exporting||job)return;
+ pause();
+ const local=keyframeLocalTime(item),frames=itemKeyframes(item);
+ time=item.start+local;
+ const existing=frames.find(frame=>Math.abs(frame.time-local)<keyframeTolerance);
+ const pose=keyframeSnapshot(item,{},local);
+ commit();
+ if(existing){
+  item.keyframes=frames.filter(frame=>frame!==existing);
+  if(!item.keyframes.length)Object.assign(item,pose);
+ }else saveItemKeyframe(item,{},local);
+ render();
+}
+const quickKeyframeButton=document.createElement('button');
+quickKeyframeButton.type='button';quickKeyframeButton.id='timelineKeyframe';
+quickKeyframeButton.title='Tambah atau hapus keyframe pada playhead';
+quickKeyframeButton.setAttribute('aria-label',quickKeyframeButton.title);
+quickKeyframeButton.innerHTML=editorIcon('diamond',17);
+quickKeyframeButton.onclick=()=>toggleEditorKeyframe();
+addTrackButton.before(quickKeyframeButton);
+const clearTimelineButton=document.createElement('button');
+clearTimelineButton.type='button';clearTimelineButton.id='clearTimeline';
+clearTimelineButton.title='Kosongkan seluruh timeline';
+clearTimelineButton.setAttribute('aria-label',clearTimelineButton.title);
+clearTimelineButton.innerHTML=editorIcon('list-x',17);
+quickKeyframeButton.after(clearTimelineButton);
+clearTimelineButton.onclick=()=>{
+ if(exporting||job)return;
+ pause();
+ modal('<h2>Kosongkan seluruh timeline?</h2><p>Semua video, gambar, teks, subtitle, dan audio pada timeline akan dihapus. Media proyek tetap tersedia. Anda dapat memakai Urungkan untuk mengembalikannya.</p>'+
+  '<div class="actions"><button id="closeModal">Batal</button><button class="primary" id="confirmClearTimeline">Kosongkan timeline</button></div>');
+ $('#confirmClearTimeline').onclick=()=>{
+  if(exporting||job)return;
+  pause();commit();
+  for(const element of media.values())element.pause();
+  clips=[];texts=[];audios=[];selected=null;activeTimelineTrack=null;time=0;
+  timelineTracks=defaultTimelineTracks();trackStates={};
+  timelineViewport.scrollLeft=timelineViewport.scrollTop=0;
+  $('#modal').close();render();toast('Timeline dikosongkan');
+ };
+};
 function syncKeyframeInspector(){
  const item=currentKeyframeItem();
- if(!item||!$('#itemKeyframeTime'))return;
- const local=keyframeLocalTime(item),frames=itemKeyframes(item);
+ const local=item?keyframeLocalTime(item):0,frames=item?itemKeyframes(item):[];
  const exact=frames.find(frame=>Math.abs(frame.time-local)<keyframeTolerance);
+ quickKeyframeButton.disabled=!item||exporting||Boolean(job);
+ quickKeyframeButton.classList.toggle('active',Boolean(exact));
+ quickKeyframeButton.setAttribute('aria-pressed',String(Boolean(exact)));
+ clearTimelineButton.disabled=exporting||Boolean(job)||![...clips,...texts,...audios].length;
+ if(!item||!$('#itemKeyframeTime'))return;
  $('#itemKeyframeTime').textContent=fmt(local);
+ if($('#itemKeyframeFrame')!==document.activeElement)$('#itemKeyframeFrame').value=Math.round(local*30);
  const toggle=$('#toggleItemKeyframe');
  toggle.classList.toggle('active',Boolean(exact));
  toggle.setAttribute('aria-label',exact?'Hapus keyframe saat ini':'Tambah keyframe');
@@ -145,7 +210,8 @@ function syncKeyframeInspector(){
  for(const [key,input] of Object.entries({
   x:$('#freeMediaX')||$('[data-prop="x"]'),y:$('#freeMediaY')||$('[data-prop="y"]'),
   scale:$('[data-prop="scale"]'),size:$('[data-prop="size"]'),rotation:$('[data-prop="rotation"]'),
-  opacity:$('[data-prop="opacity"]')||$('#keyframeTextOpacity')
+  opacity:$('[data-prop="opacity"]')||$('#keyframeTextOpacity'),
+  brightness:$('[data-prop="brightness"]'),contrast:$('[data-prop="contrast"]'),saturation:$('[data-prop="saturation"]')
  })){
   if(input&&input!==document.activeElement)input.value=studioRound(pose[key]??keyframeDefaults(item)[key]??0);
  }
@@ -174,21 +240,16 @@ renderInspector=function(){
   '<button type="button" id="nextItemKeyframe" aria-label="Keyframe berikutnya">'+editorIcon('chevron-right',15)+'</button>'+
   '<output id="itemKeyframeTime">00:00.00</output></div>'+
   '<label class="featureLabel">Interpolasi<select id="itemKeyframeEasing"><option value="linear">Linier</option><option value="ease">Halus</option><option value="hold">Tahan</option></select></label>'+
-  '<p class="featureNote">Tambah keyframe, geser playhead, lalu ubah posisi, ukuran, rotasi, atau opasitas untuk membuat gerakan.</p>'+
+  '<label class="featureLabel">Frame lokal · 30 fps<input id="itemKeyframeFrame" type="number" min="0" max="'+Math.floor(item.duration*30)+'" step="1"></label>'+
+  '<p class="featureNote">Atur frame, tambah keyframe, lalu ubah zoom atau efek. Pilih Tahan untuk pergantian tepat pada keyframe berikutnya.</p>'+
   (texts.includes(item)?field('Rotasi (°)','rotation',item.rotation||0,-360,360)+
    '<label class="featureLabel">Opasitas (%)<input id="keyframeTextOpacity" type="range" min="0" max="100" step="1" value="'+(item.opacity??100)+'"></label>':'');
  name.after(panel);
- $('#toggleItemKeyframe').onclick=()=>{
-  if(exporting||job)return;
-  pause();const local=keyframeLocalTime(item),frames=itemKeyframes(item);
-  const existing=frames.find(frame=>Math.abs(frame.time-local)<keyframeTolerance);
-  commit();
-  if(existing){
-   const pose=keyframedItem(item,local);
-   item.keyframes=frames.filter(frame=>frame!==existing);
-   if(!item.keyframes.length)Object.assign(item,Object.fromEntries(Object.keys(keyframeDefaults(item)).map(key=>[key,pose[key]])));
-  }else saveItemKeyframe(item,{});
-  render();
+ $('#toggleItemKeyframe').onclick=()=>toggleEditorKeyframe(item);
+ $('#itemKeyframeFrame').onchange=event=>{
+  const frame=Number(event.target.value);
+  if(!Number.isFinite(frame)||frame<0||frame>Math.floor(item.duration*30))return syncKeyframeInspector();
+  pause();time=item.start+Math.round(frame)/30;draw();
  };
  for(const [id,direction] of [['prevItemKeyframe',-1],['nextItemKeyframe',1]]){
   $('#'+id).onclick=()=>{
@@ -218,6 +279,10 @@ renderInspector=function(){
    render();
   };
  }
+ const filterInput=$('[data-prop="filter"]');
+ if(filterInput)filterInput.onchange=event=>{
+  pause();commit();setTransformValues(item,{filter:event.target.value});render();
+ };
  if(clips.includes(item)){
   for(const [id,delta] of [['rotateLeft',-90],['rotateRight',90],['resetScale',0]]){
    const button=$('#'+id);
