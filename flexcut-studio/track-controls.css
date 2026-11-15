@@ -1,15 +1,50 @@
-.trackLabels > div.timelineTrackLabel { justify-content: space-between; gap: 4px; padding-inline: 10px 6px; }
-.trackControlButtons { display: flex; align-items: center; gap: 2px; }
-.trackControl { display: grid; place-items: center; width: 24px; height: 25px; padding: 0; color: var(--text); border-radius: 4px; }
-.trackControl:hover, .trackControl:focus-visible { color: var(--accent); background: var(--accent-soft); }
-.trackControl[aria-pressed="false"] { color: var(--muted); }
-.trackControl[aria-pressed="true"] g:last-child, .trackControl[aria-pressed="false"] g:first-child { display: none; }
-.track.trackInactive .clip, .track.trackInactive .transitionAnchor { opacity: .4; }
+.trackLabels { width: 157px; }
+.trackLabels > div.timelineTrackLabel { justify-content: space-between; gap: 2px; padding-inline: 5px; }
+.trackLabels > div.timelineTrackLabel[data-track-kind] { height: 52px; }
+.trackLabels > div.timelineTrackLabel[data-track-kind="video"] { height: 66px; }
+.trackLabels > div.timelineTrackLabel.currentTrack { background: var(--accent-soft); }
+.trackControlButtons { display: flex; align-items: center; gap: 1px; }
+.trackControl {
+ display: grid; place-items: center; width: 22px; height: 25px; padding: 0;
+ color: var(--text); border-radius: 4px;
+}
+.trackControl.trackSelect { display: flex; gap: 4px; padding-inline: 3px; flex: 1; width: auto; min-width: 0; }
+.trackSelect span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trackControl:hover, .trackControl:focus-visible, .trackControl[aria-pressed="true"].trackSelect { color: var(--accent); background: var(--accent-soft); }
+.trackToggle[aria-pressed="false"] { color: var(--muted); }
+.trackToggle[aria-pressed="true"] i:last-child, .trackToggle[aria-pressed="false"] i:first-child { display: none; }
+.trackToggle i { line-height: 0; }
+.track[hidden], .trackMenu[hidden] { display: none !important; }
+.track.trackInactive .clip, .track.trackInactive .studioTransitionMarker { opacity: .4; }
 .track.trackMuted .clip { opacity: .65; }
 .track.trackInactive.trackMuted .clip { opacity: .4; }
-@media (max-width: 620px) {
- .trackLabels > div.timelineTrackLabel { padding-inline: 4px; }
- .trackControlButtons { gap: 0; }
- .trackControl { width: 19px; }
- .trackControl svg { width: 13px; height: 13px; }
+.trackMenu {
+ position: fixed; z-index: 150; min-width: 152px; padding: 5px; background: var(--panel);
+ border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 20px #0007;
 }
+.trackMenu button, .editorIconLabel, .timelineToolbar button.timelineAddTrack {
+ display: inline-flex; align-items: center; gap: 6px;
+}
+.trackMenu button { width: 100%; padding: 8px 10px; text-align: left; }
+.trackMenu button:hover, .trackMenu button:focus-visible { background: var(--accent-soft); color: var(--accent); }
+.timelineToolbar button.timelineAddTrack { color: var(--text); margin-left: 4px; white-space: nowrap; padding: 4px 6px; }
+.trackPicker { margin: 6px 0 10px; }
+.editorIcon { display: inline-block; flex: none; vertical-align: middle; }
+.viewer .transport #prev svg,.viewer .transport #next svg,.viewer .transport #play svg { fill: none; }
+#play [data-pause-icon], #play.is-playing [data-play-icon], #fullscreen [data-exit-icon], .viewer:fullscreen #fullscreen [data-full-icon] { display: none; }
+#play.is-playing [data-pause-icon], .viewer:fullscreen #fullscreen [data-exit-icon] { display: block; }
+@media(max-width: 620px) {
+ .trackLabels { width: 86px; }
+ .trackLabels > div.timelineTrackLabel { padding-inline: 2px; }
+ .trackControlButtons { gap: 0; }
+ .trackControl { width: 17px; }
+ .trackControl svg { width: 13px; height: 13px; }
+ .trackSelect span { display: none; }
+ .timelineToolbar button.timelineAddTrack span { display: none; }
+}
+
+#tracks { height: auto; min-height: 100%; }
+
+.headerActions .editorIconLabel, .appearanceControl .editorIconLabel { gap: 4px; }
+
+.audioPlaceholder { display: inline-flex; align-items: center; gap: 4px; }

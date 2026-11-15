@@ -185,7 +185,7 @@ function paintStudioClipTransition(previous,current,local,progress){
   if(frame.width!==w)frame.width=w;
   if(frame.height!==h)frame.height=h;
   const g=frame.getContext('2d');
-  g.fillStyle='#101315';g.fillRect(0,0,w,h);
+  g.drawImage(canvas,0,0);
   const [clip,position,muted]=inputs[i];
   paintClip(clip,position,{muted,target:g});
  }

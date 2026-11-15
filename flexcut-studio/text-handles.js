@@ -10,7 +10,7 @@ let previewTextGesture=null;
 
 function studioClamp(value,min,max){return Math.min(max,Math.max(min,value))}
 function studioRound(value){return Math.round(value*100)/100}
-function visibleStudioText(text){return trackVisible('text')&&time>=text.start&&time<text.start+text.duration&&Boolean(text.text.trim())}
+function visibleStudioText(text){return trackVisible(itemTrack(text,'text'))&&time>=text.start&&time<text.start+text.duration&&Boolean(text.text.trim())}
 
 function studioTextBounds(text){
  const w=canvas.width,h=canvas.height,isCaption=text.kind==='subtitle';
@@ -222,7 +222,7 @@ function bindTextTrim(element,text){
    const result=textTrimChange(original,side,edge+delta,[],0,Math.max(total(),original.end));
    if(result.start===text.start&&result.duration===text.duration)return;
    commit();selected=text.id;applyTextTrim(text,original,result);revealSelectedText(text);render();
-   $$('#textTrack .clip').find(el=>el.dataset.textId===text.id)?.querySelector('.textTrim-'+side)?.focus();
+   $$('#tracks .textClip').find(el=>el.dataset.textId===text.id)?.querySelector('.textTrim-'+side)?.focus();
   };
   element.append(handle);
  }

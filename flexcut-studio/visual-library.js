@@ -52,7 +52,7 @@ function sampleStudioFrame(img,{mirror=false}={}){
 }
 
 async function bindStudioPreviews(root,kind,clip){
- const index=clips.indexOf(clip),previous=clips[index-1];
+ const previous=precedingClip(clip);
  const before=studioThumbnail(previous||clip),after=studioThumbnail(clip);
  const [imgA,imgB]=await Promise.all([loadStudioThumbnail(before),loadStudioThumbnail(after)]);
  if(!root.isConnected)return;
@@ -97,7 +97,7 @@ async function bindStudioPreviews(root,kind,clip){
 }
 
 function applyStudioTransition(clip,id,duration){
- if(clips.indexOf(clip)<1){toast('Pilih sambungan atau klip kedua di timeline');return false}
+ if(!precedingClip(clip)){toast('Pilih sambungan atau klip kedua di timeline');return false}
  commit();
  clip.transition=id;
  clip.transitionDuration=duration;
@@ -201,7 +201,7 @@ function renderStudioLibrary(root,kind,clip,{popover=false}={}){
    const id=clip?.transition&&clip.transition!=='none'?clip.transition:'dissolve';
    const seconds=Number(duration.value);
    commit();
-   for(const item of clips.slice(1)){item.transition=id;item.transitionDuration=seconds}
+   for(const item of clips.filter(precedingClip)){item.transition=id;item.transitionDuration=seconds}
    render();toast('Transisi diterapkan ke semua sambungan');
   });
  }else{
@@ -219,7 +219,7 @@ function closeStudioTransitionPicker(restoreFocus=false){
  transitionPicker.hidden=true;
  transitionPicker.replaceChildren();
  if(restoreFocus&&anchor){
-  const button=$$('#videoTrack .studioTransitionMarker').find(el=>el.dataset.transitionClip===anchor.dataset.transitionClip);
+  const button=$$('#tracks .studioTransitionMarker').find(el=>el.dataset.transitionClip===anchor.dataset.transitionClip);
   button?.focus();
  }
 }
@@ -248,24 +248,22 @@ timelineViewport.addEventListener('scroll',()=>{if(!transitionPicker.hidden)clos
 const timelineBeforeStudio=renderTimeline;
 renderTimeline=function(){
  timelineBeforeStudio();
- let start=0;
- clips.forEach((clip,index)=>{
-  if(index){
+ for(const clip of clips){
+  if(precedingClip(clip)){
    const active=Boolean(clip.transition&&clip.transition!=='none');
    const button=document.createElement('button');
    button.type='button';
    button.className='transitionMark studioTransitionMarker'+(active?' hasTransition':'');
    button.dataset.transitionClip=clip.id;
-   button.style.left=start*zoom+'px';
+   button.style.left=clipStart(clip)*zoom+'px';
    button.textContent=active?'⇄':'+';
    button.title=active?`Edit ${transitions[clip.transition]?.[0]||'transisi'}`:'Tambahkan transisi';
    button.setAttribute('aria-label',`${button.title} sebelum ${clip.name}`);
    button.onkeydown=event=>{if(event.code==='Space')event.stopPropagation()};
    button.onclick=()=>showStudioTransitionPicker(clip,button);
-   $('#videoTrack').append(button);
+   timelineLane(itemTrack(clip,'video')).append(button);
   }
-  start+=clip.duration;
- });
+ }
 };
 
 const libraryBeforeStudio=renderLibrary;

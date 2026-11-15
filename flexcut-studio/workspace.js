@@ -154,12 +154,12 @@ $('#tracks').addEventListener('pointerdown',e=>{
 function bindTextDrag(el,t){
   el.dataset.textId=t.id;el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',`${t.kind==='subtitle'?'Subtitle':'Teks'} ${t.text}. Mulai ${t.start.toFixed(2)} detik. Tarik untuk memindahkan.`);
   el.title='Tarik untuk memindahkan waktu tampil · Tombol panah: 0,1 detik';el.style.touchAction='none';
-  el.onclick=()=>{if(el.dataset.dragged==='true'){delete el.dataset.dragged;return}selected=t.id;renderTimeline();renderInspector();if(tab==='subtitles')renderLibrary()};
+  el.onclick=()=>{if(el.dataset.dragged==='true'){delete el.dataset.dragged;return}activeTimelineTrack=itemTrack(t,'text');selected=t.id;renderTimeline();renderInspector();if(tab==='subtitles')renderLibrary()};
   el.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();e.stopPropagation();const start=Math.max(0,Math.min(Math.max(0,total()-t.duration),t.start+(e.key==='ArrowLeft'?-1:1)*(e.shiftKey?1:.1)));if(start===t.start)return;commit();t.start=Math.round(start*100)/100;selected=t.id;render();$('#textTrack').querySelector(`[data-text-id="${t.id}"]`)?.focus()};
   el.onpointerdown=e=>{
     if(e.button!==0||exporting)return;
     e.preventDefault();e.stopPropagation();pause();selected=t.id;renderInspector();
-    $$('#textTrack .clip,#videoTrack .clip,#audioTrack .clip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');
+    $$('#tracks .clip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');
     const initial=t.start,startX=e.clientX,initialScroll=timelineViewport.scrollLeft,originalTime=time;
     const points=[0,time,...texts.filter(x=>x!==t).flatMap(x=>[x.start,x.start+x.duration]),...clips.map(clipStart),total()];
     const gesture={lastX:e.clientX,alt:e.altKey,moved:false,done:false};textGesture=gesture;
@@ -186,7 +186,13 @@ renderTimeline=function(){
   previousTimeline();
   updateTimelineZoomControls(limits);
   renderTimelineRuler();
-  const textElements=[...$('#textTrack').children];texts.forEach((t,i)=>{if(textElements[i])bindTextDrag(textElements[i],t)});
+  const textItems=new Map(texts.map(text=>[text.id,text]));
+  for(const element of $$('#tracks .textClip')){
+   const text=textItems.get(element.dataset.id);
+   if(!text)continue;
+   if(text.kind==='subtitle')element.classList.add('subtitleClip');
+   bindTextDrag(element,text);
+  }
   fillFilmstrips();syncTimelineNavigation();
 };
 const previousWorkspaceDraw=draw;
@@ -199,7 +205,7 @@ $('#timelineResize').onkeydown=e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e
 function nearestThumbnail(frames,at){return frames.reduce((best,f)=>Math.abs(f.at-at)<Math.abs(best.at-at)?f:best,frames[0])}
 function fillFilmstrips(){
   const assetsById=new Map(assets.map(asset=>[asset.id,asset]));
-  const clipElements=new Map($$('#videoTrack .clip').map(element=>[element.dataset.id,element]));
+  const clipElements=new Map($$('#tracks .videoTrack .clip').map(element=>[element.dataset.id,element]));
   for(const c of clips){
     const asset=assetsById.get(c.asset);
     const film=clipElements.get(c.id)?.querySelector('.film');
@@ -274,17 +280,17 @@ function bindAssetCard(card,thumb,asset){
  const actions=document.createElement('div');
  actions.className='assetActions';
  const controls=[
-  ['assetAdd','Tambahkan ke timeline','M5 12h14M12 5v14',()=>addAsset(asset.id)],
-  ['assetPreview','Pratinjau','M8 5l12 7-12 7z',()=>showAssetPreview(asset)],
-  ['assetRemove','Hapus','M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7M14 10v7',()=>confirmAssetRemoval(asset)]
+  ['assetAdd','Tambahkan ke timeline','plus',()=>addAsset(asset.id)],
+  ['assetPreview','Pratinjau','play',()=>showAssetPreview(asset)],
+  ['assetRemove','Hapus','trash-2',()=>confirmAssetRemoval(asset)]
  ];
- for(const [className,label,path,action] of controls){
+ for(const [className,label,icon,action] of controls){
   const button=document.createElement('button');
   button.type='button';
   button.className=className;
   button.title=label+' '+asset.name;
   button.setAttribute('aria-label',button.title);
-  button.innerHTML=`<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  button.innerHTML=editorIcon(icon,12);
   button.onclick=event=>{event.stopPropagation();action()};
   actions.append(button);
  }
