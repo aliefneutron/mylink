@@ -6,12 +6,12 @@ const captionStyles={
  mint:{name:'Mint highlight',color:'#10291e',size:46,weight:700,font:'Arial',stroke:null,line:0,bg:'#a8f3cd'},
  cinema:{name:'Cinema',color:'#ffffff',size:43,weight:400,font:'Georgia',stroke:'#111111',line:2,bg:null}
 };
-let captionTemplate='clean',captionView='auto',captionLanguage='indonesian',captionModel='fast',job=null,asrWorker=null;
+let captionTemplate='clean',captionView='auto',captionLanguage='indonesian',captionModel='accurate',job=null,asrWorker=null;
 const decodedAudio=new Map();
 try{
  const settings=JSON.parse(localStorage.getItem('flexcut-caption-settings')||'{}');
  if(['indonesian','english','auto','javanese','malay'].includes(settings.language))captionLanguage=settings.language;
- if(settings.model==='accurate')captionModel='accurate';
+ if(settings.version===2&&settings.model==='fast')captionModel='fast';
 }catch(error){}
 const dbPromise=new Promise(resolve=>{const request=indexedDB.open('ruangcut-media',1);request.onupgradeneeded=()=>request.result.createObjectStore('audio');request.onsuccess=()=>resolve(request.result);request.onerror=()=>resolve(null)});
 async function stashAudio(id,blob){const db=await dbPromise;if(db)await new Promise(resolve=>{const tx=db.transaction('audio','readwrite');tx.objectStore('audio').put(blob,id);tx.oncomplete=resolve;tx.onerror=resolve})}
@@ -64,7 +64,7 @@ draw=function(){const w=canvas.width,h=canvas.height,current=activeClip();ctx.fi
  const asset=assets.find(a=>a.id===c.asset);if(!asset?.src){ctx.fillStyle='#b3b9ba';ctx.font='22px Arial';ctx.textAlign='center';ctx.fillText('Impor ulang media: '+c.name,w/2,h/2,w*.85)}}
  for(const [id,el]of media){if((id.startsWith('video:')&&!activeKeys.has(id))||assets.some(a=>a.id===id))el.pause()}
  for(const t of texts){if(time<t.start||time>=t.start+t.duration)continue;if(t.kind==='subtitle'){paintCaption(t);continue}ctx.save();ctx.fillStyle=t.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${t.weight||500} ${t.size*w/1280}px "${t.font||'Georgia'}",serif`;ctx.shadowColor='#0009';ctx.shadowBlur=8;t.text.split('\n').forEach((line,n)=>ctx.fillText(line,w*(t.x??50)/100,h*t.y/100+n*t.size*w/1280*1.2,w*.9));ctx.restore()}
- $('#currentTime').textContent=fmt(time);$('#totalTime').textContent=fmt(total());$('#playhead').style.left=time*zoom+'px';$('#play').textContent=playing?'Ⅱ':'▶';$('.stageTag').style.display=clips.every(c=>c.asset==='coast')?'':'none';
+ updateTransport();$('#playhead').style.left=time*zoom+'px';$('.stageTag').style.display=clips.every(c=>c.asset==='coast')?'':'none';
 };
 syncAudio=function(){for(const a of audios){if(!a.src)continue;let el=media.get(a.id);if(!el){el=new Audio(a.src);media.set(a.id,el)}const inside=time>=a.start&&time<a.start+a.duration;if(playing&&inside){const target=(a.in||0)+(time-a.start)*(a.speed||1);if(Math.abs(el.currentTime-target)>.22)el.currentTime=target;el.volume=a.volume/100;el.playbackRate=a.speed||1;if(el.paused)el.play().catch(()=>{})}else el.pause()}};
 // Extend the existing navigation and keep all editor state in its original history.
@@ -77,11 +77,11 @@ renderLibrary=function(){if(!['transitions','subtitles'].includes(tab)){baseLibr
  $('#libraryContent').innerHTML=`<div class="captionTabs"><button data-caption-view="auto" class="${captionView==='auto'?'active':''}">Auto</button><button data-caption-view="templates" class="${captionView==='templates'?'active':''}">Template</button><button data-caption-view="edit" class="${captionView==='edit'?'active':''}">Edit teks</button></div><div id="captionPanel"></div>`;$$('[data-caption-view]').forEach(b=>b.onclick=()=>{captionView=b.dataset.captionView;renderLibrary()});renderCaptionPanel();
 };
 function templateCards(){return `<div class="captionTemplateGrid">${Object.entries(captionStyles).map(([id,s])=>`<button class="captionTemplate ${captionTemplate===id?'chosen':''}" data-caption-template="${id}"><span class="captionSample sample-${id}">Ceritamu dimulai.</span><strong>${s.name}</strong></button>`).join('')}</div>`}
-function renderCaptionPanel(){const subs=texts.filter(t=>t.kind==='subtitle').sort((a,b)=>a.start-b.start);if(captionView==='auto'){$('#captionPanel').innerHTML=`<div class="featureCard heroFeature"><span class="featureIcon">✧</span><h3>Suara menjadi cerita.</h3><p>Ubah ucapan video menjadi subtitle dengan Whisper, langsung di perangkat Anda.</p></div><label class="featureLabel">Sumber<select id="captionSource"><option value="all">Semua klip video</option><option value="selected">Klip video terpilih</option>${audios.map(a=>`<option value="${a.id}">♫ ${esc(a.name)}</option>`).join('')}</select></label><label class="featureLabel">Bahasa ucapan<select id="captionLanguage"><option value="auto">Deteksi otomatis</option><option value="indonesian">Bahasa Indonesia</option><option value="english">English</option><option value="javanese">Bahasa Jawa</option><option value="malay">Bahasa Melayu</option></select></label><label class="featureLabel">Model Whisper<select id="captionModel"><option value="fast">Ringan · Whisper Tiny (~100 MB)</option><option value="accurate">Akurat · Large v3 Turbo (~760 MB)</option></select></label><button class="primary full" id="generateCaptions">✧ Buat auto subtitle</button><p class="featureNote">Model diunduh saat pertama dipilih. Audio diproses di perangkat. Model akurat memerlukan lebih banyak memori. Periksa ejaan dan waktu hasilnya.</p><div class="captionUtility"><button id="manualCaption">＋ Manual</button><button id="importSrt">↥ Impor SRT</button></div>`;$('#captionLanguage').value=captionLanguage;$('#captionModel').value=captionModel;
+function renderCaptionPanel(){const subs=texts.filter(t=>t.kind==='subtitle').sort((a,b)=>a.start-b.start);if(captionView==='auto'){$('#captionPanel').innerHTML=`<div class="featureCard heroFeature"><span class="featureIcon">✧</span><h3>Suara menjadi cerita.</h3><p>Ubah ucapan video menjadi subtitle dengan Whisper, langsung di perangkat Anda.</p></div><label class="featureLabel">Sumber<select id="captionSource"><option value="all">Semua klip video</option><option value="selected">Klip video terpilih</option>${audios.map(a=>`<option value="${a.id}">♫ ${esc(a.name)}</option>`).join('')}</select></label><label class="featureLabel">Bahasa ucapan<select id="captionLanguage"><option value="auto">Deteksi otomatis</option><option value="indonesian">Bahasa Indonesia</option><option value="english">English</option><option value="javanese">Bahasa Jawa</option><option value="malay">Bahasa Melayu</option></select></label><label class="featureLabel">Model Whisper<select id="captionModel"><option value="fast">Ringan · Whisper Tiny (~100 MB)</option><option value="accurate">Akurat · Large v3 Turbo (~760 MB)</option></select></label><button class="primary full" id="generateCaptions">✧ Buat auto subtitle</button><p class="featureNote">Pilih bahasa ucapan untuk membantu pengenalan. Mode Akurat menampilkan waktu per kata dan memerlukan lebih banyak memori. Model diunduh saat pertama digunakan. Audio diproses di perangkat.</p><div class="captionUtility"><button id="manualCaption">＋ Manual</button><button id="importSrt">↥ Impor SRT</button></div>`;$('#captionLanguage').value=captionLanguage;$('#captionModel').value=captionModel;
  const saveCaptionSettings=()=>{
   captionLanguage=$('#captionLanguage').value;
   captionModel=$('#captionModel').value;
-  try{localStorage.setItem('flexcut-caption-settings',JSON.stringify({language:captionLanguage,model:captionModel}))}catch(error){}
+  try{localStorage.setItem('flexcut-caption-settings',JSON.stringify({version:2,language:captionLanguage,model:captionModel}))}catch(error){}
  };
  $('#captionLanguage').onchange=$('#captionModel').onchange=saveCaptionSettings;
  $('#generateCaptions').onclick=()=>{saveCaptionSettings();generateCaptions($('#captionSource').value)};$('#manualCaption').onclick=addCaption;$('#importSrt').onclick=()=>$('#srtInput').click()}
@@ -100,16 +100,138 @@ function endJob(token){if(job===token){job=null;$('#modal').close();$('#modal').
 function assertJob(token){if(token.cancelled)throw new Error('cancelled')}
 async function decodeSource(src,token){if(decodedAudio.has(src))return decodedAudio.get(src);audioContext=audioContext||new AudioContext();await audioContext.resume();const data=await fetch(src).then(r=>{if(!r.ok)throw new Error('Media tidak dapat dibaca');return r.arrayBuffer()});assertJob(token);try{const audio=await audioContext.decodeAudioData(data);decodedAudio.set(src,audio);return audio}catch(error){assertJob(token);setJobStatus('Membaca audio video secara langsung. Proses mengikuti durasi video…');const audio=await captureAudio(src,token);decodedAudio.set(src,audio);return audio}}
 async function captureAudio(src,token){const ac=audioContext,el=document.createElement('video');el.src=src;el.playsInline=true;el.preload='auto';await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Metadata video tidak terbaca')),20000);el.onloadedmetadata=()=>{clearTimeout(timer);resolve()};el.onerror=()=>{clearTimeout(timer);reject(new Error('Video tidak dapat dibaca'))}});assertJob(token);if(!Number.isFinite(el.duration)||el.duration>600)throw new Error('Gunakan klip maksimal 10 menit untuk format audio ini');const source=ac.createMediaElementSource(el),processor=ac.createScriptProcessor(4096,2,1),mute=ac.createGain();mute.gain.value=0;const chunks=[];processor.onaudioprocess=e=>{const input=e.inputBuffer,out=new Float32Array(input.length);for(let ch=0;ch<input.numberOfChannels;ch++){const d=input.getChannelData(ch);for(let i=0;i<d.length;i++)out[i]+=d[i]/input.numberOfChannels}chunks.push(out)};source.connect(processor);processor.connect(mute);mute.connect(ac.destination);try{await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Pembacaan audio melebihi batas waktu')),(el.duration+25)*1000);const cancel=()=>{clearTimeout(timer);reject(new Error('cancelled'))};token.cancelHooks.push(cancel);el.onended=()=>{clearTimeout(timer);resolve()};el.onerror=()=>{clearTimeout(timer);reject(new Error('Audio video tidak terbaca'))};el.play().catch(reject)})}finally{el.pause();source.disconnect();processor.disconnect();mute.disconnect();el.removeAttribute('src');el.load()}assertJob(token);const length=chunks.reduce((n,c)=>n+c.length,0);if(!length)throw new Error('Tidak ada audio yang terbaca');const buffer=ac.createBuffer(1,length,ac.sampleRate),out=buffer.getChannelData(0);let offset=0;for(const c of chunks){out.set(c,offset);offset+=c.length}return buffer}
-async function segmentAudio(src,offset,duration,speed,rate,token){const source=await decodeSource(src,token);assertJob(token);const frames=Math.max(1,Math.ceil(duration*rate)),offline=new OfflineAudioContext(1,frames,rate),node=offline.createBufferSource();node.buffer=source;node.playbackRate.value=speed;node.connect(offline.destination);node.start(0,Math.max(0,offset));node.stop(duration);const out=await offline.startRendering();assertJob(token);return out}
+async function segmentAudio(src,offset,duration,speed,rate,token,{speech=false}={}){const source=await decodeSource(src,token);assertJob(token);const frames=Math.max(1,Math.ceil(duration*rate)),offline=new OfflineAudioContext(1,frames,rate),node=offline.createBufferSource();node.buffer=source;node.playbackRate.value=speed;if(speech){const filter=offline.createBiquadFilter();filter.type='highpass';filter.frequency.value=75;filter.Q.value=.707;node.connect(filter);filter.connect(offline.destination)}else node.connect(offline.destination);node.start(0,Math.max(0,offset));node.stop(duration);const out=await offline.startRendering();assertJob(token);return out}
 function wavBlob(buffer){const data=buffer.getChannelData(0),bytes=new ArrayBuffer(44+data.length*2),view=new DataView(bytes);const str=(at,s)=>[...s].forEach((c,i)=>view.setUint8(at+i,c.charCodeAt(0)));str(0,'RIFF');view.setUint32(4,36+data.length*2,true);str(8,'WAVE');str(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,buffer.sampleRate,true);view.setUint32(28,buffer.sampleRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);str(36,'data');view.setUint32(40,data.length*2,true);for(let i=0;i<data.length;i++){const s=Math.max(-1,Math.min(1,data[i]));view.setInt16(44+i*2,s<0?s*32768:s*32767,true)}return new Blob([bytes],{type:'audio/wav'})}
 function selectedVideo(){const c=clips.find(c=>c.id===selected),a=assets.find(a=>a.id===c?.asset);return a?.type==='video'&&a.src?{c,a}:null}
 function showExtract(){const item=selectedVideo();if(!item)return toast('Impor dan pilih klip video di timeline terlebih dahulu');pause();modal(`<h2>Suara punya ruang sendiri.</h2><p>${esc(item.c.name)} · ${item.c.duration.toFixed(1)} detik</p><p>Audio mengikuti pangkasan dan kecepatan klip. Pisahkan ke track untuk mengedit volume secara terpisah, atau unduh WAV.</p><label class="featureLabel">Hasil<select id="extractMode"><option value="track">Pisahkan ke track audio</option><option value="download">Unduh WAV saja</option><option value="both">Track audio + unduh WAV</option></select></label><label class="checkLabel"><input type="checkbox" id="muteOriginal" checked> Bisukan suara video setelah dipisahkan</label><div class="actions"><button id="closeModal">Batal</button><button class="primary" id="runExtract">Ekstrak audio</button></div>`);$('#runExtract').onclick=()=>{const mode=$('#extractMode').value,mute=$('#muteOriginal').checked;$('#modal').close();extractAudio(item,mode,mute)}}
 async function extractAudio({c,a},mode,mute){const token=beginJob('Mengekstrak audio…');try{const buffer=await segmentAudio(a.src,c.in,c.duration,c.speed,44100,token),blob=wavBlob(buffer),name=c.name.replace(/\.[^.]+$/,'')+'-audio.wav';assertJob(token);if(mode!=='download'){const id=uid();await stashAudio(id,blob);assertJob(token);commit();audios.push({id,name,src:URL.createObjectURL(blob),type:'audio',start:clipStart(c),duration:c.duration,sourceDuration:c.duration,volume:c.volume,extracted:true});if(mute)c.volume=0;selected=id;tab='audio';updateNav();render()}if(mode!=='track')download(blob,name);endJob(token);toast('Audio berhasil diekstrak')}catch(e){endJob(token);if(!token.cancelled){console.error(e);toast('Ekstraksi gagal: '+e.message)}}}
 async function downloadTrack(a){if(!a.src)return toast('Impor ulang audio terlebih dahulu');const token=beginJob('Menyiapkan audio WAV…');try{const buffer=await segmentAudio(a.src,a.in||0,a.duration,a.speed||1,44100,token);download(wavBlob(buffer),a.name.replace(/\.[^.]+$/,'')+'.wav');endJob(token);toast('Audio WAV diunduh')}catch(e){endJob(token);if(!token.cancelled)toast('Audio tidak dapat diekspor: '+e.message)}}
-function recognize(audio,language,token){return new Promise((resolve,reject)=>{asrWorker=asrWorker||new Worker('caption-worker.js?v=openreel-models-1',{type:'module'});asrWorker.onmessage=({data})=>{if(data.type==='status')setJobStatus(data.text);if(data.type==='complete'){if(captionModel==='accurate'&&data.model==='fast')token.captionFallback=true;resolve(data.output)};if(data.type==='error'){asrWorker.terminate();asrWorker=null;reject(new Error(data.text))}};asrWorker.onerror=e=>{asrWorker?.terminate();asrWorker=null;reject(new Error(e.message||'Model tidak dapat dimuat'))};token.cancelHooks.push(()=>reject(new Error('cancelled')));asrWorker.postMessage({audio,language,model:captionModel},[audio.buffer])})}
-function subtitleChunks(output,duration){const raw=output.chunks?.length?output.chunks:[{text:output.text,timestamp:[0,duration]}];return raw.flatMap((c,i)=>{const start=Math.max(0,Math.min(duration,Number(c.timestamp?.[0]||0))),end=Math.min(duration,Number(c.timestamp?.[1]??raw[i+1]?.timestamp?.[0]??duration)),words=(c.text||'').trim().split(/\s+/).filter(Boolean),groups=[];for(let n=0;n<words.length;n+=7){const count=Math.min(7,words.length-n);groups.push({text:words.slice(n,n+count).join(' '),start:start+(end-start)*n/words.length,duration:(end-start)*count/words.length})}return groups}).filter(c=>c.text&&c.duration>.08)}
-async function generateCaptions(source){let inputs=[];if(source==='all'){inputs=clips.filter(c=>assets.find(a=>a.id===c.asset)?.type==='video').map(c=>({id:c.id,name:c.name,src:assets.find(a=>a.id===c.asset)?.src,offset:c.in,duration:c.duration,speed:c.speed,start:clipStart(c)}))}else if(source==='selected'){const item=selectedVideo();if(item)inputs=[{id:item.c.id,name:item.c.name,src:item.a.src,offset:item.c.in,duration:item.c.duration,speed:item.c.speed,start:clipStart(item.c)}]}else{const a=audios.find(a=>a.id===source);if(a)inputs=[{...a,offset:a.in||0,speed:a.speed||1}]}
-if(!inputs.length)return toast('Impor video berisi ucapan, lalu pilih sumber subtitle');if(inputs.some(a=>!a.src))return toast('Impor ulang media sumber sebelum membuat subtitle');if(inputs.some(a=>a.duration>600))return toast('Pisahkan klip menjadi bagian maksimal 10 menit');const token=beginJob('Membuat auto subtitle…');try{const generated=[];for(let i=0;i<inputs.length;i++){const input=inputs[i];setJobStatus(`Membaca audio ${i+1}/${inputs.length}: ${input.name}`);const buffer=await segmentAudio(input.src,input.offset,input.duration,input.speed,16000,token),samples=buffer.getChannelData(0);if(!samples.some(x=>Math.abs(x)>.002))continue;const output=await recognize(new Float32Array(samples),captionLanguage,token);assertJob(token);for(const row of subtitleChunks(output,input.duration)){const t={id:uid(),kind:'subtitle',sourceId:input.id,text:row.text,words:row.words,start:input.start+row.start,duration:row.duration,y:85};setCaptionStyle(t,captionTemplate);generated.push(t)}}assertJob(token);if(!generated.length){endJob(token);return toast('Tidak ada ucapan terdeteksi pada sumber yang dipilih')}commit();const ids=new Set(inputs.map(a=>a.id));texts=texts.filter(t=>!(t.kind==='subtitle'&&ids.has(t.sourceId)));texts.push(...generated);selected=generated[0].id;time=generated[0].start;tab='subtitles';captionView='edit';updateNav();render();endJob(token);toast(generated.length+' subtitle dibuat'+(token.captionFallback?' dengan Whisper Tiny. ':'. ')+ 'Periksa hasilnya.')}catch(e){endJob(token);if(!token.cancelled){console.error(e);toast('Auto subtitle gagal. Periksa koneksi dan coba lagi.');modal(`<h2>Model belum siap.</h2><p>Auto subtitle memerlukan unduhan model dan browser dengan WebAssembly. Coba Chrome/Edge, lalu ulangi. Anda juga dapat mengimpor SRT atau menulis subtitle manual.</p><p class="errorDetail">${esc(e.message)}</p><div class="actions"><button class="primary" id="closeModal">Mengerti</button></div>`)}}}
+function recognize(audio,language,model,token){
+ return new Promise((resolve,reject)=>{
+  const worker=asrWorker=asrWorker||new Worker('caption-worker.js?v=word-timing-1',{type:'module'});
+  function finish(error,output){
+   const index=token.cancelHooks.indexOf(cancel);
+   if(index>=0)token.cancelHooks.splice(index,1);
+   worker.onmessage=worker.onerror=null;
+   if(error){
+    worker.terminate();
+    if(asrWorker===worker)asrWorker=null;
+    reject(error);
+   }else resolve(output);
+  }
+  const cancel=()=>reject(new Error('cancelled'));
+  worker.onmessage=({data})=>{
+   if(data.type==='status')setJobStatus(data.text);
+   if(data.type==='complete')finish(null,data.output);
+   if(data.type==='error')finish(new Error(data.text));
+  };
+  worker.onerror=e=>finish(new Error(e.message||'Model tidak dapat dimuat'));
+  token.cancelHooks.push(cancel);
+  worker.postMessage({audio,language,model},[audio.buffer]);
+ });
+}
+
+function subtitleChunks(output,duration,speed=1){
+ const chunks=output.chunks||[],rows=[];
+ const limit=t=>Math.min(duration,Math.max(0,t/speed));
+ let group=[];
+ function flush(){
+  if(!group.length)return;
+  const start=group[0].start,end=group.at(-1).end;
+  rows.push({
+   text:group.map(word=>word.text).join(' '),start,duration:end-start,
+   words:group.map(word=>({text:word.text,start:word.start-start,duration:word.end-word.start}))
+  });
+  group=[];
+ }
+ for(let index=0;index<chunks.length;index++){
+  const {text,timestamp}=chunks[index];
+  if(!text?.trim()||!Number.isFinite(timestamp?.[0]))continue;
+  const nextStart=chunks[index+1]?.timestamp?.[0];
+  const suppliedEnd=timestamp[1];
+  const start=limit(timestamp[0]);
+  const next=Number.isFinite(nextStart)?limit(nextStart):duration;
+  const bound=next>start?next:duration;
+  const end=Math.min(bound,Number.isFinite(suppliedEnd)&&limit(suppliedEnd)>start?
+   limit(suppliedEnd):start+(suppliedEnd===timestamp[0]?.05:.45));
+  if(end<=start)continue;
+  const previous=group.at(-1);
+  if(previous&&(start-previous.end>=.55||end-group[0].start>3.5))flush();
+  group.push({text:text.trim(),start,end});
+  if(group.length>=7||/[.!?…][”"’']?$/.test(text.trim()))flush();
+ }
+ flush();
+ return rows;
+}
+
+function normalizeCaptionSamples(samples){
+ let peak=0,energy=0;
+ for(const value of samples){
+  peak=Math.max(peak,Math.abs(value));
+  energy+=value*value;
+ }
+ if(peak<.0008||!energy)return false;
+ const rms=Math.sqrt(energy/samples.length);
+ const gain=Math.min(8,.94/peak,Math.max(1,.08/rms));
+ if(gain>1)for(let i=0;i<samples.length;i++)samples[i]*=gain;
+ return true;
+}
+
+async function generateCaptions(source){
+ if(job||exporting)return;
+ const videoInputs=clips.filter(c=>assets.find(a=>a.id===c.asset)?.type==='video');
+ const selectedClips=source==='all'?videoInputs:videoInputs.filter(c=>source==='selected'&&c.id===selected);
+ const inputs=selectedClips.map(c=>({
+  id:c.id,name:c.name,src:assets.find(a=>a.id===c.asset)?.src,
+  offset:c.in||0,duration:c.duration,speed:c.speed||1,start:clipStart(c)
+ }));
+ const audio=audios.find(a=>a.id===source);
+ if(audio)inputs.push({...audio,offset:audio.in||0,speed:audio.speed||1});
+ if(!inputs.length)return toast('Impor video atau audio berisi ucapan, lalu pilih sumber subtitle');
+ if(inputs.some(a=>!a.src))return toast('Impor ulang media sumber sebelum membuat subtitle');
+ if(inputs.some(a=>a.duration*a.speed>600))return toast('Pisahkan sumber menjadi bagian maksimal 10 menit');
+ const model=captionModel,language=captionLanguage;
+ const token=beginJob('Membuat auto subtitle…');
+ try{
+  const generated=[];
+  for(let i=0;i<inputs.length;i++){
+   const input=inputs[i];
+   setJobStatus(`Membaca audio ${i+1}/${inputs.length} · ${input.name}`);
+   const nativeDuration=input.duration*input.speed;
+   const buffer=await segmentAudio(input.src,input.offset,nativeDuration,1,16000,token,{speech:true});
+   const samples=buffer.getChannelData(0);
+   if(!normalizeCaptionSamples(samples))continue;
+   const output=await recognize(new Float32Array(samples),language,model,token);
+   assertJob(token);
+   for(const row of subtitleChunks(output,input.duration,input.speed)){
+    const t={id:uid(),kind:'subtitle',sourceId:input.id,text:row.text,words:row.words,
+     start:input.start+row.start,duration:row.duration,y:85};
+    setCaptionStyle(t,captionTemplate);
+    generated.push(t);
+   }
+  }
+  assertJob(token);
+  if(!generated.length){endJob(token);return toast('Tidak ada ucapan dengan waktu yang dapat dikenali')}
+  commit();
+  const ids=new Set(generated.map(t=>t.sourceId));
+  texts=texts.filter(t=>!(t.kind==='subtitle'&&ids.has(t.sourceId)));
+  texts.push(...generated);
+  selected=generated[0].id;
+  time=generated[0].start;
+  tab='subtitles';
+  captionView='edit';
+  updateNav();
+  render();
+  endJob(token);
+  toast(generated.length+' subtitle dibuat dengan waktu per kata. Periksa ejaannya.');
+ }catch(error){
+  endJob(token);
+  if(!token.cancelled){
+   console.error(error);
+   modal(`<h2>Auto subtitle belum berhasil</h2><p>${model==='accurate'?'Model Akurat memerlukan sekitar 760 MB untuk unduhan pertama dan memori yang cukup. Coba kembali atau pilih Ringan pada panel Auto subtitle.':'Periksa koneksi dan ulangi. Anda juga dapat mengimpor SRT atau membuat subtitle secara manual.'}</p><p class="errorDetail">${esc(error.message)}</p><div class="actions"><button class="primary" id="closeModal">Mengerti</button></div>`);
+  }
+ }
+}
 function parseSrt(source){const blocks=source.replace(/^\uFEFF/,'').replace(/\r/g,'').trim().split(/\n\s*\n/),rows=[];const stamp=s=>{const m=s.match(/(\d+):(\d{2}):(\d{2})[,.](\d{3})/);return m?Number(m[1])*3600+Number(m[2])*60+Number(m[3])+Number(m[4])/1000:NaN};for(const b of blocks){const lines=b.split('\n'),n=lines.findIndex(l=>l.includes('-->'));if(n<0)continue;const [s,e]=lines[n].split('-->'),start=stamp(s),end=stamp(e),text=lines.slice(n+1).join('\n').replace(/<[^>]+>/g,'').trim();if(Number.isFinite(start)&&end>start&&text)rows.push({text,start,duration:end-start})}return rows}
 function srtStamp(t){const ms=Math.round(Math.max(0,t)*1000);return `${String(Math.floor(ms/3600000)).padStart(2,'0')}:${String(Math.floor(ms/60000)%60).padStart(2,'0')}:${String(Math.floor(ms/1000)%60).padStart(2,'0')},${String(ms%1000).padStart(3,'0')}`}
 function exportSrt(){const rows=texts.filter(t=>t.kind==='subtitle').sort((a,b)=>a.start-b.start);if(!rows.length)return toast('Belum ada subtitle untuk diekspor');download(new Blob([rows.map((t,i)=>`${i+1}\n${srtStamp(t.start)} --> ${srtStamp(t.start+t.duration)}\n${t.text}\n`).join('\n')],{type:'application/x-subrip;charset=utf-8'}),$('#projectName').value+'.srt');toast('Subtitle SRT diunduh')}

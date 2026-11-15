@@ -8,7 +8,22 @@ const filterNames={original:'Original',warm:'Golden hour',cinema:'Cinema',mono:'
 function uid(){return Math.random().toString(36).slice(2,10)}
 function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function total(){return clips.reduce((s,c)=>s+c.duration,0)}
-function fmt(t){t=Math.max(0,t);return String(Math.floor(t/60)).padStart(2,'0')+':'+(t%60).toFixed(2).padStart(5,'0')}
+function fmt(t){
+ const centiseconds=Math.round(Math.max(0,t)*100);
+ const pad=value=>String(value).padStart(2,'0');
+ return pad(Math.floor(centiseconds/6000))+':'+pad(Math.floor(centiseconds/100)%60)+'.'+pad(centiseconds%100);
+}
+const playButton=$('#play'),previewCurrentTime=$('#currentTime').firstChild,previewTotalTime=$('#totalTime').firstChild;
+function updateTransport(){
+ const current=fmt(time),duration=fmt(total());
+ if(previewCurrentTime.data!==current)previewCurrentTime.data=current;
+ if(previewTotalTime.data!==duration)previewTotalTime.data=duration;
+ const label=playing?'Jeda':'Putar';
+ if(playButton.getAttribute('aria-label')!==label){
+  playButton.classList.toggle('is-playing',playing);
+  playButton.setAttribute('aria-label',label);
+ }
+}
 function snapshot(){return {assets:assets.slice(),edit:JSON.stringify({clips,texts,audios,ratio:$('#ratio').value})}}
 function commit(){undoStack.push(snapshot());if(undoStack.length>50)undoStack.shift();redoStack=[]}
 function restore(s){const d=JSON.parse(s.edit);assets=s.assets.slice();clips=d.clips;texts=d.texts;audios=d.audios;if(![...clips,...texts,...audios].some(x=>x.id===selected))selected=clips[0]?.id;$('#ratio').value=d.ratio||'16:9';setRatio();time=Math.min(time,total());render()}
@@ -20,7 +35,7 @@ function getVideo(a){if(!media.has(a.id)){const v=document.createElement('video'
 function draw(){const w=canvas.width,h=canvas.height;ctx.fillStyle='#101315';ctx.fillRect(0,0,w,h);const current=activeClip();for(const [id,v] of media){if(id!==current?.c.asset)v.pause()}
 if(current){const {c,start}=current,a=assets.find(a=>a.id===c.asset);if(a?.src){let source;if(a.type==='video'){source=getVideo(a);const target=c.in+(time-start)*c.speed;if(Number.isFinite(source.duration)){if(Math.abs(source.currentTime-target)>(playing?.3:.045))source.currentTime=Math.min(source.duration-.02,Math.max(0,target));source.playbackRate=c.speed;source.volume=c.volume/100;source.muted=exporting;if(playing&&source.paused)source.play().catch(()=>{});if(!playing)source.pause()}}else source=getImage(a);const sw=source.videoWidth||source.naturalWidth,sh=source.videoHeight||source.naturalHeight;if(sw&&sh){ctx.save();ctx.filter=[filterMap[c.filter]||'none',`brightness(${c.brightness}%) contrast(${c.contrast}%) saturate(${c.saturation}%)`].filter(f=>f!=='none').join(' ');ctx.globalAlpha=c.opacity/100;ctx.translate(w/2,h/2);ctx.rotate(c.rotation*Math.PI/180);const r=Math.max(w/sw,h/sh)*c.scale/100;ctx.drawImage(source,-sw*r/2,-sh*r/2,sw*r,sh*r);ctx.restore()}}else{ctx.fillStyle='#a0a8a7';ctx.font='24px sans-serif';ctx.textAlign='center';ctx.fillText('Impor ulang media: '+c.name,w/2,h/2)}}
 for(const t of texts){if(time>=t.start&&time<t.start+t.duration){ctx.save();ctx.fillStyle=t.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`500 ${t.size*w/1280}px Georgia,serif`;ctx.shadowColor='#0009';ctx.shadowBlur=8;const lines=t.text.split('\n');lines.forEach((line,n)=>ctx.fillText(line,w/2,h*t.y/100+n*t.size*w/1280*1.2,w*.9));ctx.restore()}}
-$('#currentTime').textContent=fmt(time);$('#totalTime').textContent=fmt(total());$('#playhead').style.left=time*zoom+'px';$('#play').textContent=playing?'Ⅱ':'▶';}
+updateTransport();$('#playhead').style.left=time*zoom+'px';}
 function setRatio(){const [w,h]=$('#ratio').value.split(':').map(Number);canvas.width=w===9?720:1280;canvas.height=Math.round(canvas.width*h/w);$('.stageTag').style.display=clips.every(c=>c.asset==='coast')?'':'none';$('.canvasWrap').style.aspectRatio=`${w}/${h}`;draw()}
 function frame(now){if(playing&&!exporting){time+=(now-last)/1000;if(time>=total()){time=total();pause()}syncAudio();draw()}last=now;requestAnimationFrame(frame)}requestAnimationFrame(frame);
 function syncAudio(){for(const a of audios){if(!a.src)continue;let el=media.get(a.id);if(!el){el=new Audio(a.src);media.set(a.id,el)}const inside=time>=a.start&&time<a.start+a.duration;if(playing&&inside){if(Math.abs(el.currentTime-(time-a.start))>.3)el.currentTime=time-a.start;el.volume=a.volume/100;if(el.paused)el.play().catch(()=>{})}else el.pause()}}

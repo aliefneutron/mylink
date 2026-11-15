@@ -262,7 +262,7 @@ function showWatermarkEditor(clip){
    if(!dialog.open||!preview.isConnected||!clips.includes(clip)||clip.asset!==asset.id)return;
    const id=uid(),name=asset.name.replace(/\.[^./]+$/,'')+' - LaMa.'+result.ext;
    onStatus('Menyimpan hasil di perangkatâ€¦');
-   await storeWatermarkAIAsset(id,result.blob);
+   await storeProcessedAsset(id,result.blob);
    signal.throwIfAborted();
    if(!dialog.open||!preview.isConnected||!clips.includes(clip)||clip.asset!==asset.id)return;
    commit();
@@ -335,4 +335,4 @@ renderLibrary=function(){
  $('#watermarkEffect').onclick=()=>showWatermarkEditor(clips.find(c=>c.id===selected));
 };
 render();
-restoreWatermarkAIAssets().catch(console.error);
+restoreProcessedAssets().catch(console.error);

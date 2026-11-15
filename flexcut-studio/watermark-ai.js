@@ -164,20 +164,20 @@ function watermarkAIPNG(canvas) {
  ));
 }
 
-async function storeWatermarkAIAsset(id, blob) {
+async function storeProcessedAsset(id, blob) {
  const db = await dbPromise;
- if (!db) throw new Error('Penyimpanan browser tidak tersedia untuk hasil AI.');
+ if (!db) throw new Error('Penyimpanan browser tidak tersedia untuk media hasil proses.');
  await new Promise((resolve, reject) => {
   const tx = db.transaction('audio', 'readwrite');
   tx.objectStore('audio').put(blob, 'watermark-ai:' + id);
   tx.oncomplete = resolve;
-  tx.onabort = () => reject(new Error('Hasil AI gagal disimpan. Periksa ruang penyimpanan browser.'));
+  tx.onabort = () => reject(new Error('Hasil gagal disimpan. Periksa ruang penyimpanan browser.'));
  });
 }
 
-async function restoreWatermarkAIAssets() {
+async function restoreProcessedAssets() {
  let changed = false;
- for (const asset of assets.filter(asset => asset.watermarkAI && !asset.src)) {
+ for (const asset of assets.filter(asset => (asset.watermarkAI || asset.derivedLocal) && !asset.src)) {
   const blob = await cachedAudio('watermark-ai:' + asset.id);
   if (blob && assets.includes(asset) && !asset.src) {
    asset.src = URL.createObjectURL(blob);
