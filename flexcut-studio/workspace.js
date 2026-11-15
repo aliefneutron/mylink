@@ -1,5 +1,63 @@
 // Direct timeline manipulation and visual media browsing.
 const timelineViewport=$('#timelineScroll');
+const timelinePlayhead=$('#playhead');
+timelinePlayhead.tabIndex=0;
+timelinePlayhead.setAttribute('role','slider');
+timelinePlayhead.setAttribute('aria-label','Penanda waktu video');
+timelinePlayhead.setAttribute('aria-valuemin','0');
+timelinePlayhead.title='Tarik garis untuk menggeser penanda waktu';
+let timelineScrub=null;
+function startTimelineScrub(event){
+ if(event.button!==0||exporting||job||timelineScrub)return;
+ event.preventDefault();event.stopPropagation();pause();
+ const target=event.currentTarget,pointer=event.pointerId;
+ const offset=target===timelinePlayhead?
+  event.clientX-$('#tracks').getBoundingClientRect().left-time*zoom:0;
+ const gesture={x:event.clientX,frame:0};
+ timelineScrub=gesture;
+ target.setPointerCapture(pointer);
+ const seek=()=>{
+  time=Math.max(0,Math.min(total(),(gesture.x-$('#tracks').getBoundingClientRect().left-offset)/zoom));
+  draw();
+ };
+ const scroll=()=>{
+  const box=timelineViewport.getBoundingClientRect(),before=timelineViewport.scrollLeft;
+  if(gesture.x>box.right-24)timelineViewport.scrollLeft+=Math.min(18,(gesture.x-box.right+24)*.6);
+  else if(gesture.x<box.left+24)timelineViewport.scrollLeft-=Math.min(18,(box.left+24-gesture.x)*.6);
+  if(before!==timelineViewport.scrollLeft)seek();
+  gesture.frame=requestAnimationFrame(scroll);
+ };
+ const move=ev=>{
+  if(ev.pointerId!==pointer)return;
+  gesture.x=ev.clientX;seek();
+ };
+ const finish=ev=>{
+  if(ev.pointerId!==pointer)return;
+  cancelAnimationFrame(gesture.frame);
+  target.removeEventListener('pointermove',move);
+  target.removeEventListener('pointerup',finish);
+  target.removeEventListener('pointercancel',finish);
+  target.removeEventListener('lostpointercapture',finish);
+  if(target.hasPointerCapture(pointer))target.releasePointerCapture(pointer);
+  timelineScrub=null;timelinePlayhead.classList.remove('scrubbing');
+ };
+ target.addEventListener('pointermove',move);
+ target.addEventListener('pointerup',finish);
+ target.addEventListener('pointercancel',finish);
+ target.addEventListener('lostpointercapture',finish);
+ timelinePlayhead.classList.add('scrubbing');
+ seek();gesture.frame=requestAnimationFrame(scroll);
+}
+timelinePlayhead.onpointerdown=startTimelineScrub;
+$('#ruler').onpointerdown=startTimelineScrub;
+timelinePlayhead.onkeydown=event=>{
+ if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)||exporting||job)return;
+ event.preventDefault();event.stopPropagation();pause();
+ if(event.key==='Home')time=0;
+ else if(event.key==='End')time=total();
+ else time=Math.max(0,Math.min(total(),time+(event.key==='ArrowLeft'?-1:1)*(event.shiftKey?1:1/30)));
+ draw();
+};
 const thumbRequests=new Map();
 let thumbQueue=Promise.resolve(),textGesture=null;
 
@@ -196,7 +254,7 @@ renderTimeline=function(){
   fillFilmstrips();syncTimelineNavigation();
 };
 const previousWorkspaceDraw=draw;
-draw=function(){previousWorkspaceDraw();if(playing&&!textGesture){const x=time*zoom;if(x>timelineViewport.scrollLeft+timelineViewport.clientWidth-45||x<timelineViewport.scrollLeft)timelineViewport.scrollLeft=Math.max(0,x-timelineViewport.clientWidth*.2)}};
+draw=function(){previousWorkspaceDraw();timelinePlayhead.setAttribute('aria-valuemax',String(total()));timelinePlayhead.setAttribute('aria-valuenow',time.toFixed(2));timelinePlayhead.setAttribute('aria-valuetext',fmt(time));if(playing&&!textGesture){const x=time*zoom;if(x>timelineViewport.scrollLeft+timelineViewport.clientWidth-45||x<timelineViewport.scrollLeft)timelineViewport.scrollLeft=Math.max(0,x-timelineViewport.clientWidth*.2)}};
 
 function setTimelineHeight(height){const available=$('main').clientHeight,max=Math.max(190,available-180);$('.timeline').style.setProperty('--timeline-size',Math.min(max,Math.max(190,height))+'px');$('main').style.setProperty('--timeline-size',Math.min(max,Math.max(190,height))+'px')}
 $('#timelineResize').onpointerdown=e=>{e.preventDefault();const initial=$('.timeline').getBoundingClientRect().height,y=e.clientY;const move=ev=>setTimelineHeight(initial+y-ev.clientY);const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end)};window.addEventListener('pointermove',move);window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end)};

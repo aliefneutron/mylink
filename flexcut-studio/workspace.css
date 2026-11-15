@@ -44,3 +44,16 @@ main{grid-template-rows:minmax(180px,1fr) var(--timeline-size,310px)!important;m
  width:7px;height:7px;top:43px;padding:0;border-radius:50%;
  font-size:0;line-height:0;transform:translateX(-50%)
 }
+#playhead {
+ pointer-events: auto; cursor: ew-resize; touch-action: none; outline: none;
+}
+#playhead::before {
+ content: ''; position: absolute; top: 0; bottom: 0; left: -7px; right: -7px;
+ cursor: ew-resize;
+}
+#playhead:is(:hover,:focus-visible,.scrubbing) {
+ box-shadow: 0 0 0 1px var(--accent), 0 0 7px var(--accent);
+}
+@media(pointer: coarse) {
+ #playhead::before { left: -12px; right: -12px; }
+}
