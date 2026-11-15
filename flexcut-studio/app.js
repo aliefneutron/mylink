@@ -18,7 +18,9 @@ function fmt(t){
 }
 const playButton=$('#play'),previewCurrentTime=$('#currentTime').firstChild,previewTotalTime=$('#totalTime').firstChild;
 function updateTransport(){
- const current=fmt(time),duration=fmt(total());
+ // Whole seconds during playback keep the transport quiet while the video draws.
+ const current=playing?fmt(Math.floor(time)).slice(0,-3):fmt(time);
+ const duration=fmt(total());
  if(previewCurrentTime.data!==current)previewCurrentTime.data=current;
  if(previewTotalTime.data!==duration)previewTotalTime.data=duration;
  const label=playing?'Jeda':'Putar';
