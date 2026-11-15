@@ -31,3 +31,16 @@ main{grid-template-rows:minmax(180px,1fr) var(--timeline-size,310px)!important;m
 .assetSelect:focus-visible,.assetActions button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media(pointer:coarse){.assetActions button{flex-basis:28px;width:28px;height:28px}}
 @media(prefers-reduced-motion:reduce){.assetActions{transition:none}}
+
+
+#tracks{padding-right:0}
+#ruler{overflow:hidden}
+#visibleTimeRange{width:auto;min-width:90px}
+.clip.compactTimelineClip{padding-inline:0;border-inline-width:0;border-radius:2px}
+.clip.compactTimelineClip .clipName{display:none}
+.clip.compactTimelineClip.selected{box-shadow:inset 0 0 0 1px var(--accent)}
+.film img.filmFrame{min-width:0;flex:1 1 0}
+.timelineOverview .transitionMark{
+ width:7px;height:7px;top:43px;padding:0;border-radius:50%;
+ font-size:0;line-height:0;transform:translateX(-50%)
+}

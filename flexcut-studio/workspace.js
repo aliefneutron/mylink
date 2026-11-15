@@ -3,7 +3,101 @@ const timelineViewport=$('#timelineScroll');
 const thumbRequests=new Map();
 let thumbQueue=Promise.resolve(),textGesture=null;
 
-function timelineContentEnd(){return Math.max(total(),...texts.map(t=>t.start+t.duration),...audios.map(a=>a.start+a.duration),0)}
+function timelineContentEnd(){
+ let end=total();
+ for(const track of [texts,audios]){
+  for(const item of track)end=Math.max(end,item.start+item.duration);
+ }
+ return end;
+}
+
+const timelineZoomSlider=$('#zoom');
+let timelineZoomMode='manual';
+let timelineRulerKey='';
+let timelineRulerFrame=0;
+
+function timelineZoomLimits(width,duration){
+ const seconds=Math.max(1,duration);
+ const available=Math.max(1,width);
+ const max=Math.min(90,8000000/seconds);
+ const fit=Math.min(max,available*.94/seconds);
+ const min=Math.min(1.45,max,available*.28/seconds);
+ return {min,max,fit};
+}
+
+function timelineTimeLabel(seconds){
+ const value=Math.max(0,Math.floor(seconds+1e-7));
+ const mm=String(Math.floor(value/60)%60).padStart(2,'0');
+ const ss=String(value%60).padStart(2,'0');
+ const hours=Math.floor(value/3600);
+ return hours?`${hours}:${mm}:${ss}`:`${mm}:${ss}`;
+}
+
+function timelineTickInterval(scale){
+ const seconds=100/scale;
+ const intervals=[1,2,3,5,10,15,30,60,120,180,300,600,900,1800,3600,7200,14400];
+ return intervals.find(step=>step>=seconds)||Math.ceil(seconds/3600)*3600;
+}
+
+function renderTimelineRuler(){
+ const ruler=$('#ruler');
+ const step=timelineTickInterval(zoom);
+ const first=Math.max(0,Math.floor(timelineViewport.scrollLeft/zoom/step)-1);
+ const right=timelineViewport.scrollLeft+timelineViewport.clientWidth;
+ const last=Math.min(Math.floor(ruler.clientWidth/zoom/step),Math.ceil(right/zoom/step)+1);
+ const key=`${zoom}:${step}:${first}:${last}`;
+ if(key===timelineRulerKey)return;
+ timelineRulerKey=key;
+ const ticks=document.createDocumentFragment();
+ for(let index=first;index<=last;index++){
+  const seconds=index*step;
+  const tick=document.createElement('div');
+  tick.className='tick';
+  tick.style.left=seconds*zoom+'px';
+  tick.textContent=timelineTimeLabel(seconds);
+  ticks.append(tick);
+ }
+ ruler.replaceChildren(ticks);
+}
+
+function updateTimelineZoomControls(limits){
+ const fraction=Math.log(zoom/limits.min)/Math.log(limits.max/limits.min);
+ timelineZoomSlider.value=Math.round(Math.min(1,Math.max(0,fraction))*100);
+ timelineZoomSlider.setAttribute('aria-valuetext',`1 menit = ${Number((zoom*60).toPrecision(3))} piksel`);
+ $('#zoomOut').disabled=zoom<=limits.min*(1+1e-6);
+ $('#zoomIn').disabled=zoom>=limits.max*(1-1e-6);
+}
+
+function setTimelineZoom(value,mode='manual'){
+ const limits=timelineZoomLimits(timelineViewport.clientWidth,timelineContentEnd());
+ const scroll=timelineViewport.scrollLeft;
+ const playheadX=time*zoom-scroll;
+ const anchor=playheadX>=0&&playheadX<=timelineViewport.clientWidth
+  ?playheadX:timelineViewport.clientWidth/2;
+ const anchorTime=(scroll+anchor)/zoom;
+ timelineZoomMode=mode;
+ zoom=Math.min(limits.max,Math.max(limits.min,value));
+ renderTimeline();
+ timelineViewport.scrollLeft=mode==='manual'?Math.max(0,anchorTime*zoom-anchor):0;
+ syncTimelineNavigation();
+}
+
+timelineZoomSlider.oninput=()=>{
+ const {min,max}=timelineZoomLimits(timelineViewport.clientWidth,timelineContentEnd());
+ const fraction=Number(timelineZoomSlider.value)/100;
+ setTimelineZoom(min*(max/min)**fraction,fraction===0?'overview':'manual');
+};
+$('#zoomIn').onclick=()=>setTimelineZoom(zoom*1.65);
+$('#zoomOut').onclick=()=>{
+ const {min}=timelineZoomLimits(timelineViewport.clientWidth,timelineContentEnd());
+ const scale=zoom/1.65;
+ setTimelineZoom(scale,scale<=min?'overview':'manual');
+};
+$('#fit').onclick=()=>{
+ const {fit}=timelineZoomLimits(timelineViewport.clientWidth,timelineContentEnd());
+ setTimelineZoom(fit,'fit');
+};
+
 function snapTextStart(value,duration,points,tolerance,maxEnd){
   const max=Math.max(0,maxEnd-duration);let result=Math.min(max,Math.max(0,value)),distance=tolerance;const proposed=result;
   for(const point of points){for(const candidate of [point,point-duration]){const delta=Math.abs(proposed-candidate);if(candidate>=0&&candidate<=max&&delta<distance){result=candidate;distance=delta}}}
@@ -18,7 +112,14 @@ function syncTimelineNavigation(){
   const max=Math.max(0,timelineViewport.scrollWidth-timelineViewport.clientWidth),pan=$('#timelinePan');
   pan.max=Math.ceil(max);pan.value=Math.round(timelineViewport.scrollLeft);pan.disabled=max<1;
   $('#timelineLeft').disabled=timelineViewport.scrollLeft<1;$('#timelineRight').disabled=timelineViewport.scrollLeft>=max-1;
-  $('#visibleTimeRange').textContent=fmt(timelineViewport.scrollLeft/zoom).slice(0,5)+' – '+fmt((timelineViewport.scrollLeft+timelineViewport.clientWidth)/zoom).slice(0,5);
+  const end=timelineContentEnd();
+  const first=Math.min(end,timelineViewport.scrollLeft/zoom);
+  const last=Math.min(end,(timelineViewport.scrollLeft+timelineViewport.clientWidth)/zoom);
+  $('#visibleTimeRange').textContent=timelineTimeLabel(first)+' – '+timelineTimeLabel(last);
+  if(!timelineRulerFrame)timelineRulerFrame=requestAnimationFrame(()=>{
+    timelineRulerFrame=0;
+    renderTimelineRuler();
+  });
   $('.trackLabels').scrollTop=timelineViewport.scrollTop;
 }
 timelineViewport.addEventListener('scroll',syncTimelineNavigation,{passive:true});
@@ -31,7 +132,14 @@ timelineViewport.addEventListener('wheel',e=>{
   const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
   if(timelineViewport.scrollWidth>timelineViewport.clientWidth){e.preventDefault();timelineViewport.scrollLeft+=delta*(e.deltaMode===1?18:1)}
 },{passive:false});
-new ResizeObserver(syncTimelineNavigation).observe(timelineViewport);
+let previousTimelineViewportWidth=timelineViewport.clientWidth;
+new ResizeObserver(()=>{
+ const width=timelineViewport.clientWidth;
+ if(width!==previousTimelineViewportWidth){
+  previousTimelineViewportWidth=width;
+  renderTimeline();
+ }else syncTimelineNavigation();
+}).observe(timelineViewport);
 
 // Dragging an empty track pans both axes without moving any clips.
 $('#tracks').addEventListener('pointerdown',e=>{
@@ -55,7 +163,7 @@ function bindTextDrag(el,t){
     const initial=t.start,startX=e.clientX,initialScroll=timelineViewport.scrollLeft,originalTime=time;
     const points=[0,time,...texts.filter(x=>x!==t).flatMap(x=>[x.start,x.start+x.duration]),...clips.map(clipStart),total()];
     const gesture={lastX:e.clientX,alt:e.altKey,moved:false,done:false};textGesture=gesture;
-    const update=()=>{if(!gesture.moved)return;const delta=(gesture.lastX-startX+timelineViewport.scrollLeft-initialScroll)/zoom;t.start=snapTextStart(initial+delta,t.duration,gesture.alt?[]:points,7/zoom,total());el.style.left=t.start*zoom+'px';el.title='Mulai '+fmt(t.start);$('#dragTimeBadge').textContent=fmt(t.start);draw()};
+    const update=()=>{if(!gesture.moved)return;const delta=(gesture.lastX-startX+timelineViewport.scrollLeft-initialScroll)/zoom;t.start=snapTextStart(initial+delta,t.duration,gesture.alt?[]:points,Math.min(.75,7/zoom),total());el.style.left=t.start*zoom+'px';el.title='Mulai '+fmt(t.start);$('#dragTimeBadge').textContent=fmt(t.start);draw()};
     const autoScroll=()=>{if(gesture.done)return;if(gesture.moved){const rect=timelineViewport.getBoundingClientRect();if(gesture.lastX>rect.right-35)timelineViewport.scrollLeft+=Math.min(18,(gesture.lastX-rect.right+35)*.45);else if(gesture.lastX<rect.left+35)timelineViewport.scrollLeft-=Math.min(18,(rect.left+35-gesture.lastX)*.45);update()}requestAnimationFrame(autoScroll)};
     const move=ev=>{gesture.lastX=ev.clientX;gesture.alt=ev.altKey;if(!gesture.moved&&Math.abs(ev.clientX-startX)>3){commit();gesture.moved=true;el.classList.add('dragging');el.insertAdjacentHTML('beforeend','<span id="dragTimeBadge"></span>')}update()};
     const finish=ev=>{if(gesture.done)return;gesture.done=true;window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',finish);window.removeEventListener('pointercancel',cancel);textGesture=null;if(gesture.moved){el.dataset.dragged='true';render();toast('Teks dipindah ke '+fmt(t.start))}else{renderTimeline();renderInspector()}};
@@ -66,8 +174,18 @@ function bindTextDrag(el,t){
 
 const previousTimeline=renderTimeline;
 renderTimeline=function(){
+  const end=timelineContentEnd();
+  const available=timelineViewport.clientWidth;
+  const limits=timelineZoomLimits(available,end);
+  if(timelineZoomMode==='overview')zoom=limits.min;
+  else if(timelineZoomMode==='fit')zoom=limits.fit;
+  else zoom=Math.min(limits.max,Math.max(limits.min,zoom));
+  const width=Math.max(available,Math.ceil(end*zoom+Math.min(32,available*.04)));
+  $('#tracks').style.width=width+'px';
+  $('#tracks').classList.toggle('timelineOverview',zoom<3);
   previousTimeline();
-  const width=Math.max(30,timelineContentEnd()+5)*zoom;$('#tracks').style.width=Math.max(timelineViewport.clientWidth,width)+'px';
+  updateTimelineZoomControls(limits);
+  renderTimelineRuler();
   const textElements=[...$('#textTrack').children];texts.forEach((t,i)=>{if(textElements[i])bindTextDrag(textElements[i],t)});
   fillFilmstrips();syncTimelineNavigation();
 };
@@ -80,10 +198,15 @@ $('#timelineResize').onkeydown=e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e
 
 function nearestThumbnail(frames,at){return frames.reduce((best,f)=>Math.abs(f.at-at)<Math.abs(best.at-at)?f:best,frames[0])}
 function fillFilmstrips(){
-  for(const c of clips){const asset=assets.find(a=>a.id===c.asset),el=$('#videoTrack').querySelector(`[data-id="${c.id}"]`),film=el?.querySelector('.film');if(!film||!asset)continue;
+  const assetsById=new Map(assets.map(asset=>[asset.id,asset]));
+  const clipElements=new Map($$('#videoTrack .clip').map(element=>[element.dataset.id,element]));
+  for(const c of clips){
+    const asset=assetsById.get(c.asset);
+    const film=clipElements.get(c.id)?.querySelector('.film');
+    if(!film||!asset)continue;
     const frames=asset.frames?.length?asset.frames:(asset.type==='image'&&asset.src?[{at:0,src:asset.src}]:[]);
     if(!frames.length){if(asset.type==='video'&&asset.src){film.innerHTML='<span class="thumbnailLoading">◌ Menyiapkan preview…</span>';requestThumbnails(asset)}continue}
-    const count=Math.max(1,Math.ceil(c.duration*zoom/78));film.innerHTML=Array.from({length:count},(_,i)=>{const at=c.in+c.duration*c.speed*(i+.5)/count;return `<img class="filmFrame" src="${esc(nearestThumbnail(frames,at).src)}" alt="" draggable="false">`}).join('');
+    const count=Math.max(1,Math.min(48,Math.ceil(c.duration*zoom/78)));film.innerHTML=Array.from({length:count},(_,i)=>{const at=c.in+c.duration*c.speed*(i+.5)/count;return `<img class="filmFrame" src="${esc(nearestThumbnail(frames,at).src)}" alt="" draggable="false">`}).join('');
   }
 }
 function audioTracksForAsset(asset){
