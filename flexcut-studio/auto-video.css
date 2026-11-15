@@ -1,0 +1,35 @@
+.autoVideoLibrary { display: grid; gap: 12px; }
+.autoVideoStyleGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.autoVideoStyle {
+ display: flex; flex-direction: column; min-width: 0; gap: 7px; padding: 6px;
+ text-align: left; border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+}
+.autoVideoStyle:hover, .autoVideoStyle.chosen { border-color: var(--accent); }
+.autoVideoStyle strong { font-size: 11px; overflow-wrap: anywhere; }
+.autoVideoSwatch {
+ display: grid; align-content: center; gap: 5px; padding: 8px; height: 54px;
+ background: var(--template-bg); border-radius: 4px;
+}
+.autoVideoSwatch i:nth-child(1) { width: 28%; height: 3px; background: var(--template-accent); }
+.autoVideoSwatch i:nth-child(2) { width: 100%; height: 16px; background: color-mix(in srgb, var(--template-accent) 22%, var(--template-bg)); border-radius: 2px; }
+.autoVideoSwatch i:nth-child(3) { width: 64%; height: 3px; background: var(--template-accent); opacity: .7; }
+dialog:has(#autoVideoForm) { width: min(650px, 94vw); max-width: 94vw; max-height: 92dvh; overflow-y: auto; }
+.autoVideoFields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 12px; }
+.autoVideoWide { grid-column: 1 / -1; }
+.autoVideoFields :is(input,textarea,select), .autoVideoGemini input { min-width: 0; width: 100%; }
+.autoVideoFields textarea { padding: 9px; color: var(--text); background: var(--input); border: 1px solid var(--line); border-radius: 5px; resize: vertical; }
+.autoVideoFields input[type=file] { padding: 6px; }
+.autoVideoStyleField, .autoAssetPicker { min-width: 0; margin: 7px 0; padding: 8px; border: 1px solid var(--line); border-radius: 6px; }
+.autoVideoStyleField legend, .autoAssetPicker legend { font-size: 11px; color: var(--muted); }
+.autoVideoStyleField .autoVideoStyleGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.autoAssetPicker { max-height: 115px; overflow: auto; }
+.autoAssetPicker input[type=checkbox] { width: auto; }
+.autoVideoGemini { border: 1px solid var(--line); border-radius: 6px; padding: 9px; margin-top: 8px; font-size: 12px; }
+.autoVideoGemini summary { cursor: pointer; }
+#autoVideoSummary { color: var(--accent); }
+#autoVideoError { margin-block: 7px; }
+@media(max-width: 620px) {
+ dialog:has(#autoVideoForm) { padding: 14px; }
+ .autoVideoStyleField .autoVideoStyleGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .autoVideoLibrary .autoVideoStyleGrid { grid-template-columns: 1fr; }
+}

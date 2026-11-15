@@ -180,12 +180,26 @@ async function storeProcessedAsset(id, blob) {
  });
 }
 
+async function removeProcessedAsset(id) {
+ const db = await dbPromise;
+ if (!db) return;
+ await new Promise((resolve, reject) => {
+  const tx = db.transaction('audio', 'readwrite');
+  tx.objectStore('audio').delete('watermark-ai:' + id);
+  tx.oncomplete = resolve;
+  tx.onabort = reject;
+ });
+}
+
 async function restoreProcessedAssets() {
  let changed = false;
  for (const asset of assets.filter(asset => (asset.watermarkAI || asset.derivedLocal) && !asset.src)) {
   const blob = await cachedAudio('watermark-ai:' + asset.id);
   if (blob && assets.includes(asset) && !asset.src) {
    asset.src = URL.createObjectURL(blob);
+   if (asset.type === 'audio') {
+    for (const audio of audios.filter(item => item.assetId === asset.id && !item.src)) audio.src = asset.src;
+   }
    changed = true;
   }
  }
