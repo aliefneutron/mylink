@@ -17,7 +17,25 @@ const dbPromise=new Promise(resolve=>{const request=indexedDB.open('ruangcut-med
 async function stashAudio(id,blob){const db=await dbPromise;if(db)await new Promise(resolve=>{const tx=db.transaction('audio','readwrite');tx.objectStore('audio').put(blob,id);tx.oncomplete=resolve;tx.onerror=resolve})}
 async function cachedAudio(id){const db=await dbPromise;return db?new Promise(resolve=>{const r=db.transaction('audio').objectStore('audio').get(id);r.onsuccess=()=>resolve(r.result);r.onerror=()=>resolve(null)}):null}
 function clipStart(clip){let start=0;for(const c of clips){if(c.id===clip.id)return start;start+=c.duration}return 0}
-function clipVideo(c){const a=assets.find(a=>a.id===c.asset);if(a?.type!=='video'||!a.src)return null;const key='video:'+c.id;if(!media.has(key)){const v=document.createElement('video');v.src=a.src;v.preload='auto';v.playsInline=true;v.onloadeddata=()=>draw();v.onseeked=()=>{if(!playing)draw()};media.set(key,v)}return media.get(key)}
+function clipVideo(c){
+ const asset=assets.find(a=>a.id===c.asset);
+ if(asset?.type!=='video'||!asset.src)return null;
+ const key='video:'+c.id,previous=media.get(key);
+ if(previous&&previous.src===new URL(asset.src,location.href).href)return previous;
+ if(previous){
+  previous.pause();
+  previous.removeAttribute('src');
+  previous.load();
+ }
+ const video=document.createElement('video');
+ video.src=asset.src;
+ video.preload='auto';
+ video.playsInline=true;
+ video.onloadeddata=()=>draw();
+ video.onseeked=()=>{if(!playing)draw()};
+ media.set(key,video);
+ return video;
+}
 function transitionDuration(c){return Math.min(c.transitionDuration||.6,c.duration/2)}
 function sourceForClip(c,local,muted=false){const a=assets.find(a=>a.id===c.asset);if(!a?.src)return null;if(a.type!=='video')return getImage(a);const v=clipVideo(c);const duration=Number.isFinite(v.duration)?v.duration:a.duration;if(duration>0){const target=Math.min(duration-.01,Math.max(0,c.in+local*c.speed));if(Math.abs(v.currentTime-target)>(playing?.22:.035))v.currentTime=target;v.playbackRate=c.speed;v.volume=muted?0:c.volume/100;v.muted=false;if(playing&&!muted){if(v.paused)v.play().catch(()=>{})}else v.pause()}return v}
 function mediaFitScale(sw,sh,w,h,rotation,mode){const radians=rotation*Math.PI/180,bw=Math.abs(Math.cos(radians))*sw+Math.abs(Math.sin(radians))*sh,bh=Math.abs(Math.sin(radians))*sw+Math.abs(Math.cos(radians))*sh;return mode==='cover'?Math.max(w/bw,h/bh):Math.min(w/bw,h/bh)}

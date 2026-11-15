@@ -155,7 +155,7 @@ function renderStudioLibrary(root,kind,clip,{popover=false}={}){
    <label class="featureLabel">Durasi<select class="studioTransitionDuration">${durationOptions.map(n=>`<option value="${n}" ${n===currentDuration?'selected':''}>${String(n).replace('.',',')} detik</option>`).join('')}</select></label>
    <button class="studioRemoveTransition" ${clip?.transition&&clip.transition!=='none'?'':'disabled'}>Lepas transisi</button>
    ${popover?'':'<button class="studioApplyAll">Terapkan ke semua</button>'}
-  </div>`:`<div class="studioGalleryFooter"><button class="studioResetEffect">Reset tampilan</button><button class="studioWatermark">Samarkan watermark</button></div>`}
+  </div>`:`<div class="studioGalleryFooter"><button class="studioResetEffect">Reset tampilan</button><button class="studioWatermark">Hapus watermark</button></div>`}
  </div>`;
  const gallery=root.querySelector('.studioGallery');
  const search=gallery.querySelector('.studioSearch');
