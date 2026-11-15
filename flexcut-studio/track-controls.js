@@ -6,7 +6,7 @@ addTrackButton.type='button';
 addTrackButton.className='timelineAddTrack';
 addTrackButton.dataset.addTrack='';
 addTrackButton.setAttribute('aria-label','Tambah track');
-addTrackButton.innerHTML=editorIcon('plus',17);
+addTrackButton.innerHTML=editorIcon('layers',16)+editorIcon('plus',11);
 addTrackButton.title='Tambah track';
 addTrackButton.setAttribute('aria-haspopup','menu');
 addTrackButton.setAttribute('aria-expanded','false');
