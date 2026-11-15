@@ -68,3 +68,5 @@
 @media (max-width: 360px) {
  main { grid-template-columns: 48px minmax(88px, 30vw) minmax(0, 1fr); }
 }
+
+.inspectorTabs[hidden] { display: none; }
