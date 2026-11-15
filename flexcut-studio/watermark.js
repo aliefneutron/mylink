@@ -111,6 +111,10 @@ function showWatermarkEditor(clip){
  modal(`<h2>Hapus watermark</h2><p>Tarik kotak sedikit lebih besar dari watermark.${isVideo?' Untuk video, pilih watermark yang posisinya tetap sepanjang klip.':''}</p>
   <div class="watermarkStage"><canvas id="watermarkCanvas" aria-label="Pratinjau dan area watermark"></canvas></div>
   <p id="watermarkStatus" class="featureNote" role="status">Memuat media…</p>
+  <div id="watermarkProgressPanel" class="watermarkProgressPanel" hidden>
+   <div><strong id="watermarkPercent">0%</strong><span id="watermarkETA"></span></div>
+   <progress id="watermarkProgress" max="100" value="0" aria-label="Progres penghapusan watermark"></progress>
+  </div>
   ${isVideo?'<label class="watermarkSeek">Posisi video <input id="watermarkSeek" type="range" min="0" max="0" step="0.01" value="0" disabled><output id="watermarkTime">00:00.00</output></label>':''}
   <div class="watermarkOptions">
    <label class="featureLabel">Metode<select id="watermarkMethod"><option value="ai">Hapus dengan AI (LaMa)</option><option value="repair">Isi dari sekeliling</option><option value="blur">Buramkan area</option></select></label>
@@ -125,6 +129,8 @@ function showWatermarkEditor(clip){
  const dialog=$('#modal'),preview=$('#watermarkCanvas'),paint=preview.getContext('2d');
  const method=$('#watermarkMethod'),compare=$('#watermarkCompare'),status=$('#watermarkStatus'),apply=$('#applyWatermark');
  const previewAI=$('#previewWatermarkAI'),aiNote=$('#watermarkAINote'),close=$('#closeModal');
+ const progressPanel=$('#watermarkProgressPanel'),progressBar=$('#watermarkProgress');
+ const percentLabel=$('#watermarkPercent'),eta=$('#watermarkETA');
  const coordinates=$$('[data-watermark-coordinate]');
  const source=isVideo?document.createElement('video'):new Image();
  method.value=saved?.mode||'ai';
@@ -243,25 +249,47 @@ function showWatermarkEditor(clip){
   close.textContent=busy?'Batalkan proses':'Batal';
   redraw();
  }
+ function updateProgress(progress,seconds=null){
+  const percent=Math.min(99,Math.max(0,Math.floor(progress*100)));
+  if(progressBar.value!==percent){
+   progressBar.value=percent;
+   percentLabel.textContent=percent+'%';
+  }
+  let message='Menghitung sisa waktu…';
+  if(seconds!==null&&Number.isFinite(seconds)){
+   const rounded=Math.max(1,Math.ceil(seconds));
+   const min=Math.floor(rounded/60),secs=rounded%60;
+   message='Perkiraan '+(min?min+' mnt ':'')+secs+' dtk lagi';
+  }
+  if(eta.textContent!==message)eta.textContent=message;
+ }
  async function runAI(previewOnly){
   if(!region||aiTask)return;
   const task=aiTask=new AbortController();
   const {signal}=task,key=previewKey(),mask={...region};
   const onStatus=message=>{if(!signal.aborted&&status.isConnected)status.textContent=message};
+  const onProgress=(progress,seconds)=>{
+   if(!signal.aborted&&dialog.open&&progressPanel.isConnected)updateProgress(progress,seconds);
+  };
   setBusy(true);
-  onStatus('Menyiapkan LaMaâ€¦');
+  if(isVideo&&!previewOnly){
+   progressPanel.hidden=false;
+   updateProgress(0);
+  }
+  onStatus('Menyiapkan LaMa…');
   try{
    if(!isVideo||previewOnly){
     if(aiPreview?.key!==key)aiPreview={key,canvas:await watermarkAIImage(source,signal,onStatus,mask)};
     signal.throwIfAborted();
    }
    if(previewOnly)return;
-   const result=isVideo?await watermarkAIVideo(asset,clip,mask,signal,onStatus):
+   const result=isVideo?await watermarkAIVideo(asset,clip,mask,signal,onStatus,onProgress):
     {blob:await watermarkAIPNG(aiPreview.canvas),ext:'png',duration:asset.duration};
    signal.throwIfAborted();
    if(!dialog.open||!preview.isConnected||!clips.includes(clip)||clip.asset!==asset.id)return;
    const id=uid(),name=asset.name.replace(/\.[^./]+$/,'')+' - LaMa.'+result.ext;
-   onStatus('Menyimpan hasil di perangkatâ€¦');
+   onStatus('Menyimpan hasil di perangkat…');
+   if(!progressPanel.hidden)eta.textContent='Menyimpan hasil…';
    await storeProcessedAsset(id,result.blob);
    signal.throwIfAborted();
    if(!dialog.open||!preview.isConnected||!clips.includes(clip)||clip.asset!==asset.id)return;
@@ -276,6 +304,7 @@ function showWatermarkEditor(clip){
   }catch(error){
    if(!signal.aborted){
     aiTask=null;
+    progressPanel.hidden=true;
     setBusy(false);
     onStatus(error.message||'Pemrosesan LaMa gagal. Coba ulangi.');
    }

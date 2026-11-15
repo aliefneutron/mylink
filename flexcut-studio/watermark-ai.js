@@ -99,7 +99,7 @@ async function watermarkAIImage(frame, signal, onStatus, region) {
  }
 }
 
-async function watermarkAIVideo(asset, clip, region, signal, onStatus) {
+async function watermarkAIVideo(asset, clip, region, signal, onStatus, onProgress) {
  onStatus('Membuka video dan memeriksa codec…');
  const bunny = await import('https://cdn.jsdelivr.net/npm/mediabunny@1.66.0/dist/bundles/mediabunny.mjs');
  const blob = await (await fetch(asset.src, {signal})).blob();
@@ -142,8 +142,13 @@ async function watermarkAIVideo(asset, clip, region, signal, onStatus) {
    signal.throwIfAborted();
    client = watermarkAIClient(signal, onStatus);
    applyMask = createWatermarkAIProcessor(client, region, true);
+   let firstProgress;
    conversion.onProgress = progress => {
-    if (progress > 0) onStatus('Memproses video… ' + Math.floor(progress * 100) + '%');
+    const now = performance.now();
+    if (progress > 0 && !firstProgress) firstProgress = {progress, now};
+    const advanced = firstProgress ? progress - firstProgress.progress : 0;
+    const remaining = advanced > 0 ? (now - firstProgress.now) / 1000 / advanced * (1 - progress) : null;
+    onProgress(progress, remaining);
    };
    await conversion.execute();
    signal.throwIfAborted();

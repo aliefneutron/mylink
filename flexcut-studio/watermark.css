@@ -13,3 +13,9 @@ dialog:has(#watermarkCanvas){width:780px;max-height:92dvh;padding:20px;overflow:
 #openWatermarkEditor{margin-bottom:8px}
 dialog:has(#watermarkCanvas) .actions{margin-top:14px;flex-wrap:wrap}
 @media(max-width:620px){dialog:has(#watermarkCanvas){padding:12px}.watermarkCoordinates{grid-template-columns:1fr 1fr}}
+
+.watermarkProgressPanel { margin: 0 0 12px; }
+.watermarkProgressPanel > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.watermarkProgressPanel strong { font-variant-numeric: tabular-nums; color: var(--accent); }
+#watermarkETA { color: var(--muted); font-size: 11px; }
+#watermarkProgress { width: 100%; height: 8px; accent-color: var(--accent); }

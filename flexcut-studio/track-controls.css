@@ -1,0 +1,15 @@
+.trackLabels > div.timelineTrackLabel { justify-content: space-between; gap: 4px; padding-inline: 10px 6px; }
+.trackControlButtons { display: flex; align-items: center; gap: 2px; }
+.trackControl { display: grid; place-items: center; width: 24px; height: 25px; padding: 0; color: var(--text); border-radius: 4px; }
+.trackControl:hover, .trackControl:focus-visible { color: var(--accent); background: var(--accent-soft); }
+.trackControl[aria-pressed="false"] { color: var(--muted); }
+.trackControl[aria-pressed="true"] g:last-child, .trackControl[aria-pressed="false"] g:first-child { display: none; }
+.track.trackInactive .clip, .track.trackInactive .transitionAnchor { opacity: .4; }
+.track.trackMuted .clip { opacity: .65; }
+.track.trackInactive.trackMuted .clip { opacity: .4; }
+@media (max-width: 620px) {
+ .trackLabels > div.timelineTrackLabel { padding-inline: 4px; }
+ .trackControlButtons { gap: 0; }
+ .trackControl { width: 19px; }
+ .trackControl svg { width: 13px; height: 13px; }
+}

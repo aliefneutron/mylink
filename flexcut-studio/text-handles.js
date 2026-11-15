@@ -10,7 +10,7 @@ let previewTextGesture=null;
 
 function studioClamp(value,min,max){return Math.min(max,Math.max(min,value))}
 function studioRound(value){return Math.round(value*100)/100}
-function visibleStudioText(text){return time>=text.start&&time<text.start+text.duration&&Boolean(text.text.trim())}
+function visibleStudioText(text){return trackVisible('text')&&time>=text.start&&time<text.start+text.duration&&Boolean(text.text.trim())}
 
 function studioTextBounds(text){
  const w=canvas.width,h=canvas.height,isCaption=text.kind==='subtitle';
