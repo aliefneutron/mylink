@@ -5,3 +5,47 @@
 .brandWords{gap:5px}.brandWords small{font-size:12px!important;line-height:1.3;font-weight:500;letter-spacing:.25px;color:color-mix(in srgb,var(--text) 82%,var(--muted));white-space:nowrap}.brandName{font-size:22px}@media(max-width:850px){.project{display:none}header{gap:14px}.brandName{font-size:20px}.brandWords small{font-size:11px!important}}@media(max-width:620px){.brandName{font-size:17px}.brandWords small{font-size:10px!important;letter-spacing:.1px}.brandWords{gap:4px}}
 
 .stageTag{display:none!important}
+
+:root{--editor-header-height:52px}
+header{
+ height:var(--editor-header-height);
+ flex-wrap:nowrap;
+ gap:16px;
+ padding:0 16px
+}
+main{height:calc(100dvh - var(--editor-header-height))}
+header .brand{flex:none;gap:7px}
+header .appIcon{width:28px;height:28px}
+header .brandWords{gap:2px}
+header .brandName{font-size:18px;line-height:1;gap:6px}
+header .brandWords small{font-size:11px!important;line-height:1.15}
+header .brand .badge{font-size:7px!important;padding:3px 5px!important;letter-spacing:1px}
+header .project{gap:12px;padding-left:16px;min-width:0}
+header .project input{width:clamp(84px,12vw,140px);min-width:0}
+header .project span{white-space:nowrap}
+.headerActions{flex:none;gap:8px}
+.headerActions>#help,.headerActions>#saveProject,.appearanceControl #appearanceToggle{
+ height:30px;
+ padding:0 9px;
+ font-size:11px
+}
+.headerActions .exportSplit{height:32px}
+.headerActions .exportSplit #export{padding-inline:12px;font-size:12px}
+.headerActions .exportSplit #exportMenuToggle{width:28px;min-width:28px}
+#exportDropdown,#appearancePanel{max-height:calc(100dvh - var(--editor-header-height) - 16px)}
+
+@media(max-width:900px){
+ header{gap:12px;padding-inline:12px}
+ .headerActions{gap:5px}
+}
+@media(max-width:620px){
+ :root{--editor-header-height:48px}
+ header{gap:6px;padding-inline:8px}
+ header .brand{gap:5px}
+ header .appIcon{width:25px;height:25px}
+ header .brandName{font-size:16px}
+ header .brandWords small{font-size:10px!important}
+ header .brand .badge{font-size:6px!important;padding:3px 4px!important}
+ .headerActions .exportSplit #export{padding-inline:9px}
+ #exportDropdown,#appearancePanel{top:calc(var(--editor-header-height) + 4px)}
+}
