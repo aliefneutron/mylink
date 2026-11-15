@@ -86,12 +86,52 @@ function fillFilmstrips(){
     const count=Math.max(1,Math.ceil(c.duration*zoom/78));film.innerHTML=Array.from({length:count},(_,i)=>{const at=c.in+c.duration*c.speed*(i+.5)/count;return `<img class="filmFrame" src="${esc(nearestThumbnail(frames,at).src)}" alt="" draggable="false">`}).join('');
   }
 }
+function audioTracksForAsset(asset){
+ if(asset.type!=='audio')return [];
+ const matchingAssets=assets.filter(a=>a.type==='audio'&&a.name===asset.name);
+ return audios.filter(a=>a.assetId===asset.id||(!a.assetId&&!a.extracted&&(
+  (asset.src&&a.src===asset.src)||(!asset.src&&!a.src&&matchingAssets.length===1&&a.name===asset.name)
+ )));
+}
+
+function confirmAssetRemoval(asset){
+ if(!assets.includes(asset))return;
+ const clipIds=new Set(clips.filter(c=>c.asset===asset.id).map(c=>c.id));
+ const audioIds=new Set(audioTracksForAsset(asset).map(a=>a.id));
+ const linkedCount=clipIds.size+audioIds.size;
+ pause();
+ modal(`<h2>Hapus media dari proyek?</h2><p>${esc(asset.name)}</p>
+  <p>${linkedCount?`${linkedCount} klip yang menggunakan media ini juga akan dihapus dari timeline. `:''}File asli tetap ada di perangkat. Gunakan Urungkan jika ingin mengembalikannya.</p>
+  <div class="actions"><button id="closeModal">Batal</button><button class="primary" id="confirmRemoveAsset">Hapus media</button></div>`);
+ $('#confirmRemoveAsset').onclick=()=>{
+  commit();
+  assets=assets.filter(a=>a.id!==asset.id);
+  clips=clips.filter(c=>!clipIds.has(c.id));
+  audios=audios.filter(a=>!audioIds.has(a.id));
+  if(clipIds.has(selected)||audioIds.has(selected))selected=clips[0]?.id;
+  time=Math.min(time,total());
+  $('#modal').close();
+  render();
+  toast('Media dihapus · Urungkan untuk mengembalikan');
+ };
+}
+
 function populateAssetCards(){
   if(tab!=='media')return;
   for(const el of $$('[data-asset]')){const asset=assets.find(a=>a.id===el.dataset.asset);if(!asset)continue;const thumb=el.querySelector('.thumb'),poster=asset.frames?.[0]?.src||(asset.type==='image'?asset.src:null);
-    if(poster){thumb.querySelector('img,.thumbnailLoading,.mediaFallback')?.remove();thumb.querySelector('span[style]')?.remove();const img=document.createElement('img');img.src=poster;img.alt=asset.name;img.draggable=false;thumb.prepend(img)}else if(asset.type==='video'&&asset.src){const placeholder=thumb.querySelector('span[style]');if(placeholder){placeholder.className='thumbnailLoading';placeholder.removeAttribute('style');placeholder.textContent='◌ Menyiapkan preview…'}requestThumbnails(asset)}
-    if(!thumb.querySelector('.previewAsset')){const b=document.createElement('button');b.className='previewAsset';b.textContent=asset.type==='video'?'▶':'⛶';b.title='Pratinjau '+asset.name;b.setAttribute('aria-label','Pratinjau '+asset.name);b.onclick=e=>{e.stopPropagation();showAssetPreview(asset)};thumb.append(b)}
-    const small=el.querySelector('small');if(small)small.textContent=(asset.type==='video'?'Video':'Foto')+(asset.width?' · '+asset.width+' × '+asset.height:' · Lokal');
+    if(poster){thumb.querySelector('img,.thumbnailLoading,.mediaFallback')?.remove();thumb.querySelector('span[style]')?.remove();const img=document.createElement('img');img.src=poster;img.alt=asset.name;img.draggable=false;thumb.prepend(img)}else if(asset.type==='video'&&asset.src){const placeholder=thumb.querySelector('.mediaFallback');if(placeholder){placeholder.className='thumbnailLoading';placeholder.removeAttribute('style');placeholder.textContent='◌ Menyiapkan preview…'}requestThumbnails(asset)}
+    if(!thumb.querySelector('.previewAsset')){const b=document.createElement('button');b.className='previewAsset';b.textContent=asset.type==='video'?'▶':asset.type==='audio'?'♫':'⛶';b.title='Pratinjau '+asset.name;b.setAttribute('aria-label','Pratinjau '+asset.name);b.onclick=e=>{e.stopPropagation();showAssetPreview(asset)};thumb.append(b)}
+    if(!thumb.querySelector('.removeAsset')){
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='removeAsset';
+      button.title='Hapus '+asset.name;
+      button.setAttribute('aria-label',button.title);
+      button.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7M14 10v7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      button.onclick=event=>{event.stopPropagation();confirmAssetRemoval(asset)};
+      thumb.append(button);
+    }
+    const small=el.querySelector('small');if(small)small.textContent=({video:'Video',image:'Foto',audio:'Audio'}[asset.type]||'Media')+(asset.width?' · '+asset.width+' × '+asset.height:' · Lokal');
   }
 }
 function waitVideoEvent(video,event,action){return new Promise((resolve,reject)=>{const cleanup=()=>{clearTimeout(timer);video.removeEventListener(event,done);video.removeEventListener('error',fail)},done=()=>{cleanup();resolve()},fail=()=>{cleanup();reject(new Error('Preview tidak terbaca'))},timer=setTimeout(fail,15000);video.addEventListener(event,done,{once:true});video.addEventListener('error',fail,{once:true});action?.()})}
@@ -104,7 +144,7 @@ async function captureThumbnails(asset){
   }catch(error){console.warn('Thumbnail:',asset.name,error.message);$$('[data-asset]').filter(el=>el.dataset.asset===asset.id).forEach(el=>{const loading=el.querySelector('.thumbnailLoading');if(loading){loading.className='mediaFallback';loading.textContent='▶ Pratinjau video'}})}finally{video.pause();video.removeAttribute('src');video.load()}
 }
 function requestThumbnails(asset){if(asset.frames?.length||!asset.src)return;const key=asset.id+asset.src;if(thumbRequests.has(key))return;thumbRequests.set(key,true);thumbQueue=thumbQueue.then(()=>captureThumbnails(asset)).catch(console.warn)}
-function showAssetPreview(asset){if(!asset.src)return toast('Impor ulang media untuk membuka pratinjau');pause();modal(`<h2>${esc(asset.name)}</h2><div class="assetPreviewStage">${asset.type==='video'?`<video id="assetPreviewVideo" src="${esc(asset.src)}" controls playsinline preload="auto" poster="${esc(asset.frames?.[0]?.src||'')}"></video>`:`<img src="${esc(asset.src)}" alt="${esc(asset.name)}">`}</div><p>${asset.type==='video'?'Video':'Foto'}${asset.width?' · '+asset.width+' × '+asset.height:''} · ${asset.duration.toFixed(1)} detik</p><div class="actions"><button id="closeModal">Tutup</button><button class="primary" id="addPreviewToTimeline">＋ Tambahkan ke timeline</button></div>`);$('#addPreviewToTimeline').onclick=()=>{$('#modal').close();addAsset(asset.id)}}
+function showAssetPreview(asset){if(!asset.src)return toast('Impor ulang media untuk membuka pratinjau');pause();modal(`<h2>${esc(asset.name)}</h2><div class="assetPreviewStage">${asset.type==='video'?`<video id="assetPreviewVideo" src="${esc(asset.src)}" controls playsinline preload="auto" poster="${esc(asset.frames?.[0]?.src||'')}"></video>`:asset.type==='audio'?`<audio id="assetPreviewVideo" src="${esc(asset.src)}" controls preload="metadata"></audio>`:`<img src="${esc(asset.src)}" alt="${esc(asset.name)}">`}</div><p>${({video:'Video',image:'Foto',audio:'Audio'}[asset.type]||'Media')}${asset.width?' · '+asset.width+' × '+asset.height:''} · ${asset.duration.toFixed(1)} detik</p><div class="actions"><button id="closeModal">Tutup</button><button class="primary" id="addPreviewToTimeline">＋ Tambahkan ke timeline</button></div>`);$('#addPreviewToTimeline').onclick=()=>{$('#modal').close();addAsset(asset.id)}}
 $('#modal').addEventListener('close',()=>{$('#assetPreviewVideo')?.pause()});
 const previousMediaLibrary=renderLibrary;
 renderLibrary=function(){previousMediaLibrary();populateAssetCards();for(const asset of assets){if(asset.type==='video')requestThumbnails(asset)}};
