@@ -1,0 +1,15 @@
+dialog:has(#watermarkCanvas){width:780px;max-height:92dvh;padding:20px;overflow:auto}
+.watermarkStage{display:flex;justify-content:center;align-items:center;min-height:84px;background:#0c0d0e;border-radius:6px;overflow:hidden}
+#watermarkCanvas{display:block;max-width:100%;height:auto;cursor:crosshair;touch-action:none}
+.watermarkOptions,.watermarkCoordinates{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.watermarkOptions{align-items:center}
+.watermarkSeek{display:flex;gap:10px;align-items:center;font-size:11px}
+.watermarkSeek input{flex:1;min-width:0}
+.watermarkSeek output{font-variant-numeric:tabular-nums}
+.watermarkDetails{font-size:11px;margin:6px 0}
+.watermarkDetails summary{cursor:pointer}
+.watermarkCoordinates{grid-template-columns:repeat(4,minmax(0,1fr))}
+.watermarkCoordinates input{width:100%;min-width:0}
+#openWatermarkEditor{margin-bottom:8px}
+dialog:has(#watermarkCanvas) .actions{margin-top:14px;flex-wrap:wrap}
+@media(max-width:620px){dialog:has(#watermarkCanvas){padding:12px}.watermarkCoordinates{grid-template-columns:1fr 1fr}}
