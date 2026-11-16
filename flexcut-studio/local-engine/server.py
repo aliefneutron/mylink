@@ -56,33 +56,6 @@ def new_project(kind):
 
 engine.proyek_baru = new_project
 
-def start_voice(data):
-    text = str(data.get("text", "")).strip()
-    mode = data.get("mode", "bawaan")
-    if not text or len(text) > 5000:
-        raise ValueError("Isi naskah suara 1–5000 karakter.")
-    if mode not in ("bawaan", "desain", "clone"):
-        raise ValueError("Mode suara tidak dikenal.")
-    reference = engine.ref_suara() if mode == "clone" else None
-    if mode == "clone" and reference is None:
-        raise ValueError("Unggah rekaman suara referensi terlebih dahulu.")
-    design = str(data.get("design", "")).strip()[:300]
-    if mode == "desain" and not design:
-        raise ValueError("Isi deskripsi suara yang diinginkan.")
-    folder = new_project("motion")
-    command = [engine.cari_uv(), "run", "-q", str(engine.SUARA / "suara.py"),
-               "--teks", text, "--keluar", str(folder / "voice.wav")]
-    if reference:
-        command += ["--referensi", str(reference)]
-    if mode == "desain":
-        command += ["--desain", design]
-
-    def finished(job):
-        job.hasil = {"jenis": "motion", "nama": folder.name,
-                     "audio": f"/berkas/motion/{folder.name}/voice.wav", "credit": CREDIT}
-    engine.KERJA.jalankan("voice", [(command, engine.SUARA)], folder, finished)
-    return {"proyek": folder.name}
-
 def prepare_motion():
     node = engine.cari_node()
     npm = Path(node).resolve().parent / "node_modules" / "npm" / "bin" / "npm-cli.js"
@@ -136,8 +109,7 @@ class Handler(engine.H):
             pass
 
     def _json(self, obj, kode=200):
-        starts = {"/api/motion", "/api/klip", "/api/klip-render", "/api/siapkan",
-                  "/api/pasang-suara", "/api/flexcut/voice"}
+        starts = {"/api/motion", "/api/klip", "/api/klip-render", "/api/siapkan"}
         if self.command == "POST" and self.path in starts and kode == 200:
             obj = {**obj, "jobid": engine.KERJA.id}
         return super()._json(obj, kode)
@@ -184,7 +156,7 @@ class Handler(engine.H):
             return self._file(engine.AKAR / "index.html")
         if path == "/api/flexcut/health":
             return self._json({"service": "flexcut-motion", "version": 1, "templates": len(CATALOG),
-                               "voice": "VoxCPM2", "credit": CREDIT, "system": engine.cek_sistem()})
+                               "voice": "Voicebox", "credit": CREDIT, "system": engine.cek_sistem()})
         if path == "/api/flexcut/asset":
             requested = parse_qs(urlparse(self.path).query).get("path", [""])[0]
             match = re.fullmatch(r"/berkas/(motion|klip)/([\w-]+)/([\w.-]+)", requested)
@@ -210,18 +182,20 @@ class Handler(engine.H):
                 if data.get("jobid") in (None, engine.KERJA.id):
                     engine.KERJA.batal()
                 return self._json({"ok": True})
-            if path == "/api/flexcut/voice":
-                return self._json(start_voice(self._body()))
             if path == "/api/siapkan":
                 data = self._body()
-                return self._json(prepare_motion() if data.get("komponen") == "motion"
-                                  else engine.siapkan(data.get("komponen", "")))
+                component = data.get("komponen")
+                if component not in {"motion", "klip"}:
+                    raise ValueError("Pilih komponen Motion atau Klip.")
+                return self._json(prepare_motion() if component == "motion" else engine.siapkan(component))
             if path == "/api/motion":
                 data = self._body()
                 if data.get("gaya") not in {row["id"] for row in CATALOG}:
                     raise ValueError("Pilih salah satu dari 24 template.")
                 if not (engine.MOTION / "node_modules" / "remotion").exists():
                     raise ValueError("Klik Siapkan Motion terlebih dahulu pada panel Koneksi.")
+                if engine.baca_pengaturan().get("VOXCPM_MODE") == "clone":
+                    engine.simpan_pengaturan({"SUARA": "bawaan", "VOXCPM_MODE": "bawaan"})
                 return self._json(engine.mulai_motion(data))
             if path == "/api/pengaturan":
                 data = self._body()
@@ -230,8 +204,7 @@ class Handler(engine.H):
                         data.pop(key)
                 engine.simpan_pengaturan(data)
                 return self._json({"ok": True, "pengaturan": engine.samarkan(engine.baca_pengaturan())})
-            allowed = {"/api/klip", "/api/klip-render", "/api/unggah", "/api/referensi-suara",
-                       "/api/pasang-suara", "/api/uji-ai", "/api/batal", "/api/wizard-selesai",
+            allowed = {"/api/klip", "/api/klip-render", "/api/unggah", "/api/uji-ai", "/api/batal", "/api/wizard-selesai",
                        "/api/pasang-cli", "/api/login-cli", "/api/ollama-tarik"}
             if path not in allowed:
                 return self._json({"galat": "Operasi tidak tersedia pada jembatan FlexCut."}, 404)

@@ -1,7 +1,7 @@
 // Template oleh Maliki Saputra (@malikisaputra) — https://malikisaputra.biz.id
 // Adapted from vendor/studio-maliki. See its LICENSE and FLEXCUT-NOTICE.md.
 let malikiTemplates=[],malikiSettings={},malikiConnected=false,malikiView='motion',malikiStyle='garis';
-let malikiDraft={topic:'',notes:'',json:'',speech:'',design:'',voice:'clone'};
+let malikiDraft={topic:'',notes:'',json:''};
 const malikiConnectionKey='flexcut-motion-engine-url';
 const malikiEngineDownload='https://aliefneutron.my.id/flexcut-studio/downloads/FlexCut-Motion-Engine.zip';
 let malikiEngine='http://127.0.0.1:8791';
@@ -81,7 +81,7 @@ function malikiConnectionForm(){
   '<label class="featureLabel">Alamat mesin lokal<input id="malikiEngineURL" value="'+esc(malikiEngine)+'" required></label>'+
   '<div class="malikiButtons"><button type="button" id="malikiConnect" class="primary">Hubungkan mesin</button>'+
   '<a class="secondary malikiDownload" href="'+malikiEngineDownload+'" download>Unduh mesin lokal</a></div>'+
-  '<p class="featureNote">Ekstrak ZIP dan jalankan Mulai FlexCut.cmd. Mesin menyediakan Remotion, pemotong klip, dan suara VoxCPM2 di komputer Anda.</p>'+
+  '<p class="featureNote">Ekstrak ZIP dan jalankan Mulai FlexCut.cmd. Mesin menyediakan Remotion dan pemotong klip di komputer Anda.</p>'+
   '<label class="featureLabel">Penyedia naskah AI<select id="malikiProvider">'+
    [['lokal','Gratis · naskah template lokal'],['ollama','Gratis · Ollama lokal'],['gemini','Gemini · kuota akun Google'],['openai','OpenAI-compatible · biaya penyedia'],
     ['claude-code','Claude Code · kuota langganan'],['codex','Codex CLI · kuota langganan'],['opencode','OpenCode · penyedia yang terhubung']]
@@ -91,7 +91,7 @@ function malikiConnectionForm(){
   '<label class="featureLabel">API key<input id="malikiAPIKey" type="password" autocomplete="off" placeholder="'+(config.GEMINI_API_KEY||config.OPENAI_API_KEY?'Key sudah tersimpan di mesin':'Opsional untuk mode lokal dan Ollama')+'"></label>'+
   '<p class="featureNote">Key disimpan di pengaturan mesin lokal. Layanan cloud mengikuti kuota dan biaya penyedianya. CLI memakai aplikasi yang sudah terpasang dan login di komputer ini.</p>'+
   '<div class="malikiButtons"><button class="primary" type="submit">Simpan koneksi AI</button><button type="button" id="malikiTestAI">Tes koneksi AI</button></div>'+
-  '<div class="malikiButtons"><button type="button" data-maliki-setup="motion">Siapkan Motion</button><button type="button" data-maliki-setup="klip">Siapkan Klip</button><button type="button" data-maliki-setup="voxcpm">Siapkan suara lokal</button></div>'+
+  '<div class="malikiButtons"><button type="button" data-maliki-setup="motion">Siapkan Motion</button><button type="button" data-maliki-setup="klip">Siapkan Klip</button></div>'+
   '</form>';
 }
 function malikiMotionForm(){
@@ -116,28 +116,15 @@ function malikiClipForm(){
   '<p class="featureNote">Analisis lokal memakai transkripsi, energi suara, dan kalimat pembuka. Setelah analisis, pilih klip untuk dirender dengan subtitle dan pembingkaian wajah.</p>'+
   '<button class="primary" type="submit">Cari momen video</button></form>';
 }
-function malikiVoiceForm(){
- return '<form id="malikiVoiceForm" class="malikiForm">'+
-  '<label class="featureLabel">Mode suara<select id="malikiVoiceMode">'+
-   [['clone','Kloning dari rekaman'],['bawaan','Suara netral VoxCPM2'],['desain','Desain suara dari deskripsi']]
-    .map(([id,name])=>'<option value="'+id+'" '+(malikiDraft.voice===id?'selected':'')+'>'+name+'</option>').join('')+'</select></label>'+
-  '<label class="featureLabel">Rekaman referensi · 10–20 detik<input id="malikiVoiceReference" type="file" accept=".wav,.mp3,.m4a,.flac,.ogg"></label>'+
-  '<label class="checkLabel"><input id="malikiVoiceConsent" type="checkbox"> Saya memiliki izin menggunakan suara pada rekaman ini.</label>'+
-  '<label class="featureLabel">Deskripsi warna suara<input id="malikiVoiceDesign" maxlength="300" value="'+esc(malikiDraft.design)+'" placeholder="Misalnya, hangat, tenang, dan jelas"></label>'+
-  '<label class="featureLabel">Naskah narasi<textarea id="malikiSpeech" rows="5" maxlength="5000" required>'+esc(malikiDraft.speech)+'</textarea></label>'+
-  '<label class="checkLabel"><input id="malikiVoiceForMotion" type="checkbox" checked> Pakai suara ini untuk motion berikutnya</label>'+
-  '<p class="featureNote">VoxCPM2 berjalan di komputer. Model diunduh sekali sekitar 5 GB. GPU mempercepat proses. Hasil WAV bisa dimasukkan ke timeline.</p>'+
-  '<button type="button" data-maliki-setup="voxcpm">Siapkan model suara</button><button class="primary" type="submit">Buat narasi suara</button></form>';
-}
 async function showMalikiWorkbench(view='motion'){
  if(job||exporting||captureSession)return toast('Selesaikan proses yang berjalan terlebih dahulu.');
  pause();malikiView=view;
- try{await loadMalikiTemplates()}catch(error){return toast(error.message)}
+ if(view==='motion'){try{await loadMalikiTemplates()}catch(error){return toast(error.message)}}
  const titles={motion:'Motion',clip:'Klip',voice:'Suara',connection:'Koneksi'};
- const content={motion:malikiMotionForm,clip:malikiClipForm,voice:malikiVoiceForm,connection:malikiConnectionForm};
+ const content={motion:malikiMotionForm,clip:malikiClipForm,voice:voiceboxForm,connection:malikiConnectionForm};
  modal('<div id="malikiWorkbench"><h2>Motion & Klip</h2><div class="malikiTabs">'+
   Object.entries(titles).map(([id,title])=>'<button type="button" data-maliki-view="'+id+'" class="'+(view===id?'chosen':'')+'">'+title+'</button>').join('')+'</div>'+
-  '<p id="malikiConnectionStatus" class="featureNote">'+(malikiConnected?'Mesin lokal tersambung.':'Mesin lokal diperlukan untuk render, klip, dan kloning suara.')+'</p>'+
+  '<p id="malikiConnectionStatus" class="featureNote">'+(view==='voice'?'Kloning suara menggunakan server Voicebox.':malikiConnected?'Mesin lokal tersambung.':'Mesin lokal diperlukan untuk render motion dan klip.')+'</p>'+
   content[view]()+'<p id="malikiError" class="errorDetail" role="alert" hidden></p>'+malikiCredit()+
   '<div class="actions"><button id="closeModal">Tutup</button></div></div>');
  $$('[data-maliki-view]').forEach(button=>button.onclick=()=>showMalikiWorkbench(button.dataset.malikiView));
@@ -145,7 +132,7 @@ async function showMalikiWorkbench(view='motion'){
   malikiStyle=button.dataset.malikiStyle;
   $$('#malikiWorkbench [data-maliki-style]').forEach(card=>card.classList.toggle('chosen',card===button));
  });
- for(const [id,key] of [['malikiTopic','topic'],['malikiNotes','notes'],['malikiJSON','json'],['malikiSpeech','speech'],['malikiVoiceDesign','design'],['malikiVoiceMode','voice']]){
+ for(const [id,key] of [['malikiTopic','topic'],['malikiNotes','notes'],['malikiJSON','json']]){
   const input=$('#'+id);if(input)input.oninput=()=>malikiDraft[key]=input.value;
  }
  function error(message){
@@ -179,7 +166,7 @@ async function showMalikiWorkbench(view='motion'){
  $$('[data-maliki-setup]').forEach(button=>button.onclick=action(()=>runMalikiJob('/api/siapkan',{komponen:button.dataset.malikiSetup})));
  $('#malikiMotionForm')?.addEventListener('submit',action(startMalikiMotion));
  $('#malikiClipForm')?.addEventListener('submit',action(startMalikiClip));
- $('#malikiVoiceForm')?.addEventListener('submit',action(startMalikiVoice));
+ if(view==='voice')bindVoiceboxForm();
 }
 async function saveMalikiConnection(){
  malikiEngine=malikiEngineURL($('#malikiEngineURL').value);
@@ -229,17 +216,6 @@ async function startMalikiClip(){
  const subtitlePath=subtitle?(await malikiRequest('/api/unggah',{file:subtitle,headers:{'X-Nama-File':encodeURIComponent(subtitle.name)}})).jalur:'';
  await runMalikiJob('/api/klip',{sumber:source,jumlah:Number($('#malikiClipCount').value),durasi:Number($('#malikiClipDuration').value),
   arahan:$('#malikiClipDirection').value,model:$('#malikiWhisper').value,ai:malikiSettings.AI,subtitle_file:subtitlePath});
-}
-async function startMalikiVoice(){
- await connectMalikiEngine();
- const mode=$('#malikiVoiceMode').value,file=$('#malikiVoiceReference').files[0],consent=$('#malikiVoiceConsent').checked;
- if(mode==='clone'&&!consent)throw new Error('Konfirmasikan izin pemakaian rekaman suara.');
- if(mode==='clone'&&file)await malikiRequest('/api/referensi-suara',{file,
-  headers:{'X-Nama-File':encodeURIComponent(file.name),'X-Izin':'ya'},timeout:300000});
- if($('#malikiVoiceForMotion').checked){
-  await malikiRequest('/api/pengaturan',{data:{SUARA:'voxcpm',VOXCPM_MODE:mode,VOXCPM_DESAIN:malikiDraft.design}});
- }
- await runMalikiJob('/api/flexcut/voice',{text:malikiDraft.speech,mode,design:malikiDraft.design});
 }
 async function runMalikiJob(path,data){
  await connectMalikiEngine();

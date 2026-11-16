@@ -1,6 +1,6 @@
 # Mesin lokal FlexCut
 
-Mesin ini menghubungkan FlexCut dengan klip, 24 template Remotion, dan suara VoxCPM2 dari Studio Maliki.
+Mesin ini menghubungkan FlexCut dengan klip dan 24 template Remotion dari Studio Maliki.
 
 Template oleh Maliki Saputra (@malikisaputra) — https://malikisaputra.biz.id
 
@@ -11,7 +11,7 @@ Sumber https://github.com/malikisaputra-source/studio-maliki dengan Lisensi Nonk
 1. Ekstrak seluruh ZIP ke satu folder. Pasang Node.js LTS dan Python jika belum tersedia.
 2. Klik dua kali **Mulai FlexCut.cmd**. Peluncur menyiapkan uv dan Python 3.12 bila dibutuhkan.
 3. FlexCut terbuka pada http://127.0.0.1:8791/app/. Pertahankan jendela mesin selama dipakai.
-4. Buka **Motion & Klip → Koneksi** dan hubungkan mesin. Klik **Siapkan Motion**, **Siapkan Klip**, atau **Siapkan suara lokal** sesuai fitur yang dipakai.
+4. Buka **Motion & Klip → Koneksi** dan hubungkan mesin. Klik **Siapkan Motion** atau **Siapkan Klip** sesuai fitur yang dipakai.
 
 Pada macOS/Linux jalankan uv run --no-project --python 3.12 local-engine/server.py. Node.js diperlukan.
 
@@ -23,8 +23,12 @@ Mode lokal menerima naskah JSON atau menyusun poin dari template gratis. Ollama 
 
 API key disimpan pada ~/FlexCut Studio/pengaturan.env. Folder ini juga menyimpan hasil dan mesin render. Jangan unggah folder data tersebut ke GitHub.
 
-## Suara dan kloning
+## Kloning suara lewat Voicebox
 
-VoxCPM2 mengunduh model sekitar 5 GB pada penyiapan pertama. Pilih netral, desain suara, atau unggah rekaman referensi 10–20 detik untuk kloning. Pakai rekaman suara sendiri atau rekaman yang telah mendapat izin. Model berjalan lokal dan proses di CPU dapat membutuhkan waktu lebih lama.
+Di FlexCut, buka **Motion & Klip → Suara**. Masukkan alamat HTTPS server Voicebox, pilih bahasa dan model, lalu unggah rekaman referensi beserta transkripnya. Setelah proses selesai, unduh WAV atau tambahkan ke timeline.
+
+Untuk menyiapkan server, ikuti [petunjuk Docker Voicebox](https://github.com/jamiepine/voicebox#download). Letakkan API di balik reverse proxy HTTPS dengan autentikasi Bearer dan atur `VOICEBOX_CORS_ORIGINS` ke `https://aliefneutron.my.id`. Jika FlexCut juga dibuka dari paket lokal, tambahkan `http://127.0.0.1:8791` sebagai origin dengan pemisah koma. Izinkan permintaan OPTIONS tanpa token untuk preflight CORS, dengan akses API lainnya dilindungi token.
+
+Integrasi menggunakan API `/health`, `/profiles`, `/generate`, `/history/{id}`, dan `/audio/{id}`. FlexCut meminta Voicebox menghapus profil sementara setelah pekerjaan selesai. Server Voicebox menyimpan model dan menjalankan proses kloning.
 
 Hasil WAV dan MP4 dapat dimasukkan ke timeline melalui tombol **Tambahkan ke timeline**. Klip menyediakan analisis momen, pemilihan klip, subtitle, dan pembingkaian wajah melalui mesin asli.
