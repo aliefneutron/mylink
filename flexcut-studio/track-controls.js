@@ -127,8 +127,8 @@ function onTimelineDrop(event,track,lane){
   addAsset(asset.id,{trackId:track.id,start:position});
  }
  if(transfer.files.length){
-  const files=[...transfer.files].filter(file=>track.type==='audio'?file.type.startsWith('audio/'):
-   track.type==='video'&&/^(image|video)\//.test(file.type));
+  const files=[...transfer.files].filter(file=>track.type==='audio'?(typeof mediaFileKind==='function'?mediaFileKind(file)==='audio':file.type.startsWith('audio/')):
+   track.type==='video'&&(typeof mediaFileKind==='function'?['image','video'].includes(mediaFileKind(file)):/^(image|video)\//.test(file.type)));
   if(!files.length)return toast('Gunakan track dengan jenis media yang sama');
   importFiles(files,{trackId:track.id,start:position});
  }

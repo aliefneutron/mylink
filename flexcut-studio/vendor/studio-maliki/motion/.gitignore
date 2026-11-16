@@ -1,0 +1,6 @@
+node_modules/
+public/suara/
+hasil/
+public/klip/
+.env
+naskah/20*.json

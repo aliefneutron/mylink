@@ -43,7 +43,7 @@ function showAutoVideoBuilder(chosen){
  if(job||exporting||captureSession)return toast('Selesaikan proses yang sedang berjalan terlebih dahulu');
  pause();
  let style=autoVideoStyles[chosen]?chosen:autoVideoStyles[autoVideoOptions.style]?autoVideoOptions.style:'pop';
- const libraryMedia=assets.filter(a=>a.src&&['image','video'].includes(a.type));
+ const libraryMedia=assets.filter(a=>a.src&&!a.requiresConversion&&['image','video'].includes(a.type));
  modal(`<form id="autoVideoForm">
   <h2>Video Otomatis</h2>
   <div class="autoVideoFields">
@@ -439,7 +439,7 @@ async function buildAutomaticVideo(options){
      if(asset)visuals.push(asset);
     }
     for(const file of options.visual){
-     const type=file.type.startsWith('video/')?'video':'image';
+     const type=typeof mediaFileKind==='function'?mediaFileKind(file):file.type.startsWith('video/')?'video':'image';
      const asset=await automaticAsset(file,type,token);
      created.push(asset);visuals.push(asset);
     }

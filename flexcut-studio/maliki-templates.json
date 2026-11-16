@@ -1,0 +1,122 @@
+[
+  {
+    "id": "piksel",
+    "name": "Pixel Art",
+    "image": "vendor/studio-maliki/studio/aset/gaya/piksel.jpg"
+  },
+  {
+    "id": "kapur",
+    "name": "Papan Kapur",
+    "image": "vendor/studio-maliki/studio/aset/gaya/kapur.jpg"
+  },
+  {
+    "id": "emas",
+    "name": "Sketsa Emas",
+    "image": "vendor/studio-maliki/studio/aset/gaya/emas.jpg"
+  },
+  {
+    "id": "ps2",
+    "name": "Low-poly PS2",
+    "image": "vendor/studio-maliki/studio/aset/gaya/ps2.jpg"
+  },
+  {
+    "id": "komik",
+    "name": "Komik",
+    "image": "vendor/studio-maliki/studio/aset/gaya/komik.jpg"
+  },
+  {
+    "id": "flat",
+    "name": "Flat Vector",
+    "image": "vendor/studio-maliki/studio/aset/gaya/flat.jpg"
+  },
+  {
+    "id": "stickman",
+    "name": "Stickman Minimalis",
+    "image": "vendor/studio-maliki/studio/aset/gaya/stickman.jpg"
+  },
+  {
+    "id": "cgi",
+    "name": "CGI Mengilap",
+    "image": "vendor/studio-maliki/studio/aset/gaya/cgi.jpg"
+  },
+  {
+    "id": "bata",
+    "name": "Bata Mainan",
+    "image": "vendor/studio-maliki/studio/aset/gaya/bata.jpg"
+  },
+  {
+    "id": "clay",
+    "name": "Clay 3D",
+    "image": "vendor/studio-maliki/studio/aset/gaya/clay.jpg"
+  },
+  {
+    "id": "garis",
+    "name": "Garis",
+    "image": "vendor/studio-maliki/studio/aset/gaya/garis.jpg"
+  },
+  {
+    "id": "neon",
+    "name": "Neon",
+    "image": "vendor/studio-maliki/studio/aset/gaya/neon.jpg"
+  },
+  {
+    "id": "kertas",
+    "name": "Kertas",
+    "image": "vendor/studio-maliki/studio/aset/gaya/kertas.jpg"
+  },
+  {
+    "id": "sinematik",
+    "name": "Panggung Sinematik",
+    "image": "vendor/studio-maliki/studio/aset/gaya/sinematik.jpg"
+  },
+  {
+    "id": "minimal",
+    "name": "Kata Kunci Minimal",
+    "image": "vendor/studio-maliki/studio/aset/gaya/minimal.jpg"
+  },
+  {
+    "id": "kolase",
+    "name": "Kolase Kertas",
+    "image": "vendor/studio-maliki/studio/aset/gaya/kolase.jpg"
+  },
+  {
+    "id": "hangat",
+    "name": "Editorial Hangat",
+    "image": "vendor/studio-maliki/studio/aset/gaya/hangat.jpg"
+  },
+  {
+    "id": "kaca",
+    "name": "UI Aplikasi Kaca",
+    "image": "vendor/studio-maliki/studio/aset/gaya/kaca.jpg"
+  },
+  {
+    "id": "bicara",
+    "name": "Bicara + Sisipan",
+    "image": "vendor/studio-maliki/studio/aset/gaya/bicara.jpg"
+  },
+  {
+    "id": "retro",
+    "name": "Dokumenter Retro",
+    "image": "vendor/studio-maliki/studio/aset/gaya/retro.jpg"
+  },
+  {
+    "id": "tekno",
+    "name": "Tekno Gelap Oranye",
+    "image": "vendor/studio-maliki/studio/aset/gaya/tekno.jpg"
+  },
+  {
+    "id": "iklan",
+    "name": "Iklan Jasa Krem",
+    "image": "vendor/studio-maliki/studio/aset/gaya/iklan.jpg"
+  },
+  {
+    "id": "sorot",
+    "name": "Grid Lampu Sorot",
+    "image": "vendor/studio-maliki/studio/aset/gaya/sorot.jpg"
+  },
+  {
+    "id": "daftar",
+    "name": "Daftar Sumber",
+    "image": "vendor/studio-maliki/studio/aset/gaya/daftar.jpg"
+  }
+]
