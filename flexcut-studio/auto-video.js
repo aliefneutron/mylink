@@ -17,21 +17,6 @@ try{
  autoVideoOptions={...autoVideoOptions,...saved};
 }catch(error){}
 
-$('.navBottom').insertAdjacentHTML('beforebegin',`<button data-tab="automatic"><b>${editorIcon('sparkles',17)}</b>Otomatis</button>`);
-$('[data-tab="automatic"]').onclick=()=>{tab='automatic';updateNav();renderLibrary()};
-const libraryBeforeAutoVideo=renderLibrary;
-renderLibrary=function(){
- if(tab!=='automatic')return libraryBeforeAutoVideo();
- $('#libraryTitle').textContent='Video Otomatis';
- $('#assetCount').textContent='';
- $('#libraryContent').innerHTML=`<div class="autoVideoLibrary">
-  <button type="button" class="primary full editorIconLabel" id="openAutoVideo">${editorIcon('sparkles',15)} Buat video</button>
-  <div class="autoVideoStyleGrid">${autoStyleCards('library')}</div>
- </div>`;
- $('#openAutoVideo').onclick=()=>showAutoVideoBuilder();
- $$('[data-auto-library]').forEach(button=>button.onclick=()=>showAutoVideoBuilder(button.dataset.autoLibrary));
-};
-
 function autoStyleCards(context,selectedStyle){
  return Object.entries(autoVideoStyles).map(([id,style])=>`
   <button type="button" class="autoVideoStyle ${id===selectedStyle?'chosen':''}" data-auto-${context}="${id}" style="--template-accent:${style.color};--template-bg:${style.background}">

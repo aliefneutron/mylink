@@ -11,7 +11,7 @@ Sumber https://github.com/malikisaputra-source/studio-maliki dengan Lisensi Nonk
 1. Ekstrak seluruh ZIP ke satu folder. Pasang Node.js LTS dan Python jika belum tersedia.
 2. Klik dua kali **Mulai FlexCut.cmd**. Peluncur menyiapkan uv dan Python 3.12 bila dibutuhkan.
 3. FlexCut terbuka pada http://127.0.0.1:8791/app/. Pertahankan jendela mesin selama dipakai.
-4. Buka **Motion & Klip → Koneksi** dan hubungkan mesin. Klik **Siapkan Motion** atau **Siapkan Klip** sesuai fitur yang dipakai.
+4. Buka **Motion & Klip → Mesin lokal** dan hubungkan mesin. Klik **Siapkan Motion** atau **Siapkan Klip** sesuai fitur yang dipakai.
 
 Pada macOS/Linux jalankan uv run --no-project --python 3.12 local-engine/server.py. Node.js diperlukan.
 
@@ -25,7 +25,7 @@ API key disimpan pada ~/FlexCut Studio/pengaturan.env. Folder ini juga menyimpan
 
 ## Kloning suara lewat Voicebox
 
-Di FlexCut, buka **Motion & Klip → Suara**. Masukkan alamat HTTPS server Voicebox, pilih bahasa dan model, lalu unggah rekaman referensi beserta transkripnya. Setelah proses selesai, unduh WAV atau tambahkan ke timeline.
+Di FlexCut, buka **Motion & Klip → Kloning suara**. Masukkan alamat HTTPS server Voicebox, pilih bahasa dan model, lalu unggah rekaman referensi beserta transkripnya. Setelah proses selesai, unduh WAV atau tambahkan ke timeline.
 
 Untuk menyiapkan server, ikuti [petunjuk Docker Voicebox](https://github.com/jamiepine/voicebox#download). Letakkan API di balik reverse proxy HTTPS dengan autentikasi Bearer dan atur `VOICEBOX_CORS_ORIGINS` ke `https://aliefneutron.my.id`. Jika FlexCut juga dibuka dari paket lokal, tambahkan `http://127.0.0.1:8791` sebagai origin dengan pemisah koma. Izinkan permintaan OPTIONS tanpa token untuk preflight CORS, dengan akses API lainnya dilindungi token.
 
