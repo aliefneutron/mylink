@@ -4,7 +4,9 @@ Source reuse follows ../vendor/studio-maliki/LICENSE.
 """
 from __future__ import annotations
 
+import hmac
 import importlib.util
+import io
 import json
 import os
 import re
@@ -23,6 +25,14 @@ APP = Path(__file__).resolve().parent.parent
 VENDOR = APP / "vendor" / "studio-maliki"
 DATA = Path(os.environ.get("FLEXCUT_DATA", Path.home() / "FlexCut Studio"))
 PORT = int(os.environ.get("FLEXCUT_PORT", "8791"))
+# Mode server (tanpa instalasi lokal): FLEXCUT_HOST=0.0.0.0 + FLEXCUT_TOKEN, di balik proxy HTTPS.
+HOST = os.environ.get("FLEXCUT_HOST", "127.0.0.1")
+TOKEN = os.environ.get("FLEXCUT_TOKEN", "")
+REMOTE = HOST not in ("127.0.0.1", "localhost", "::1")
+EXTRA_ORIGINS = {o.strip().rstrip("/") for o in os.environ.get("FLEXCUT_ORIGINS", "").split(",") if o.strip()}
+MAX_UPLOAD = int(os.environ.get("FLEXCUT_MAX_UPLOAD_MB", "2048")) * 1024 * 1024
+if REMOTE and len(TOKEN) < 24:
+    raise SystemExit("FLEXCUT_TOKEN (minimal 24 karakter) wajib diisi saat FLEXCUT_HOST bukan alamat lokal.")
 DATA.mkdir(parents=True, exist_ok=True)
 os.environ["STUDIO_DATA"] = str(DATA)
 os.environ["STUDIO_PORT"] = str(PORT)
@@ -112,6 +122,8 @@ class Handler(engine.H):
         starts = {"/api/motion", "/api/klip", "/api/klip-render", "/api/siapkan"}
         if self.command == "POST" and self.path in starts and kode == 200:
             obj = {**obj, "jobid": engine.KERJA.id}
+        if kode == 403:
+            self._denied = True
         return super()._json(obj, kode)
 
     def _asal_aman(self):
@@ -120,11 +132,37 @@ class Handler(engine.H):
             return True
         parsed = urlparse(origin)
         return ((parsed.scheme == "http" and parsed.hostname in ("localhost", "127.0.0.1"))
-                or origin in ("https://aliefneutron.my.id", "https://aliefneutron.github.io"))
+                or origin in ("https://aliefneutron.my.id", "https://www.aliefneutron.my.id",
+                              "https://aliefneutron.github.io")
+                or origin in EXTRA_ORIGINS)
+
+    def _izin(self):
+        if not TOKEN:
+            return True
+        supplied = self.headers.get("Authorization", "")
+        return hmac.compare_digest(supplied.encode(), ("Bearer " + TOKEN).encode())
+
+    def _cek_sumber(self, data):
+        # Mode server: sumber klip hanya URL http(s) atau berkas yang diunggah lewat /api/unggah.
+        uploads = (DATA / "unggahan").resolve()
+        for key in ("sumber", "subtitle_file"):
+            value = str(data.get(key) or "").strip()
+            if not value:
+                continue
+            if re.match(r"^https?://", value, re.I):
+                continue
+            try:
+                inside = Path(value).resolve().is_relative_to(uploads)
+            except (OSError, ValueError):
+                inside = False
+            if not inside:
+                raise ValueError("Sumber harus berupa tautan http(s) atau berkas yang diunggah.")
 
     def end_headers(self):
         origin = self.headers.get("Origin")
-        if origin and self._asal_aman():
+        # Origin ditolak tetap diberi header CORS agar browser dapat membaca pesan 403,
+        # bukan melaporkannya sebagai "mesin belum terhubung".
+        if origin and (self._asal_aman() or getattr(self, "_denied", False)):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Private-Network", "true")
@@ -132,16 +170,19 @@ class Handler(engine.H):
 
     def do_OPTIONS(self):
         if not self._asal_aman():
-            return self._json({"galat": "Asal tidak diizinkan."}, 403)
+            return self._json({"galat": "Asal tidak diizinkan: " + str(self.headers.get("Origin"))}, 403)
         self.send_response(204)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nama-File, X-Jenis, X-Izin, Range")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Nama-File, X-Jenis, X-Izin, Range")
         self.end_headers()
 
     def do_GET(self):
         path = unquote(urlparse(self.path).path)
         if not self._asal_aman():
-            return self._json({"galat": "Asal tidak diizinkan."}, 403)
+            return self._json({"galat": "Asal tidak diizinkan: " + str(self.headers.get("Origin"))}, 403)
+        open_path = path in ("/", "/app") or path.startswith("/app/") or path == "/api/flexcut/health"
+        if TOKEN and not open_path and not self._izin():
+            return self._json({"galat": "Token akses mesin tidak valid atau belum diisi."}, 401)
         if path in ("/", "/app"):
             self.send_response(302)
             self.send_header("Location", "/app/")
@@ -156,7 +197,8 @@ class Handler(engine.H):
             return self._file(engine.AKAR / "index.html")
         if path == "/api/flexcut/health":
             return self._json({"service": "flexcut-motion", "version": 1, "templates": len(CATALOG),
-                               "voice": "Voicebox", "credit": CREDIT, "system": engine.cek_sistem()})
+                               "voice": "Voicebox", "credit": CREDIT,
+                               "system": engine.cek_sistem() if self._izin() else {}})
         if path == "/api/flexcut/asset":
             requested = parse_qs(urlparse(self.path).query).get("path", [""])[0]
             match = re.fullmatch(r"/berkas/(motion|klip)/([\w-]+)/([\w.-]+)", requested)
@@ -174,9 +216,19 @@ class Handler(engine.H):
 
     def do_POST(self):
         if not self._asal_aman():
-            return self._json({"galat": "Asal tidak diizinkan."}, 403)
+            return self._json({"galat": "Asal tidak diizinkan: " + str(self.headers.get("Origin"))}, 403)
         path = urlparse(self.path).path
+        if TOKEN and not self._izin():
+            return self._json({"galat": "Token akses mesin tidak valid atau belum diisi."}, 401)
+        if REMOTE and path in {"/api/pasang-cli", "/api/login-cli", "/api/ollama-tarik"}:
+            return self._json({"galat": "Operasi ini dinonaktifkan pada mode server."}, 404)
         try:
+            if path == "/api/unggah" and int(self.headers.get("Content-Length") or 0) > MAX_UPLOAD:
+                return self._json({"galat": "Berkas melebihi batas unggah server."}, 413)
+            if REMOTE and path == "/api/klip":
+                raw = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+                self._cek_sumber(json.loads(raw or b"{}"))
+                self.rfile = io.BytesIO(raw)
             if path == "/api/batal":
                 data = self._body()
                 if data.get("jobid") in (None, engine.KERJA.id):
@@ -217,7 +269,7 @@ class LocalHTTPServer(ThreadingHTTPServer):
 
 def main():
     try:
-        server = LocalHTTPServer(("127.0.0.1", PORT), Handler)
+        server = LocalHTTPServer((HOST, PORT), Handler)
     except OSError:
         try:
             with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/api/flexcut/health", timeout=2) as response:
@@ -230,9 +282,9 @@ def main():
             webbrowser.open(f"http://127.0.0.1:{PORT}/app/")
         print("Mesin FlexCut sudah berjalan.", flush=True)
         return
-    print(f"FlexCut local engine http://127.0.0.1:{PORT}/app/", flush=True)
+    print(f"FlexCut engine {'(mode server) ' if REMOTE else ''}http://{HOST}:{PORT}/app/", flush=True)
     print(CREDIT, flush=True)
-    if "--no-browser" not in sys.argv:
+    if "--no-browser" not in sys.argv and not REMOTE:
         webbrowser.open(f"http://127.0.0.1:{PORT}/app/")
     try:
         server.serve_forever()

@@ -27,3 +27,5 @@ dialog:has(#malikiWorkbench) { width: min(900px,94vw); max-width: 94vw; max-heig
  .malikiTabs button { padding: 6px 9px; }
  dialog:has(#malikiWorkbench) { padding: 16px; }
 }
+.malikiManual { margin-top: 14px; }
+.malikiManual summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }

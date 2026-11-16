@@ -1,0 +1,11 @@
+{$FLEXCUT_DOMAIN} {
+	request_body {
+		max_size 2GB
+	}
+	reverse_proxy flexcut:8791 {
+		flush_interval -1
+		transport http {
+			response_header_timeout 15m
+		}
+	}
+}

@@ -1,0 +1,29 @@
+services:
+  flexcut:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      FLEXCUT_TOKEN: ${FLEXCUT_TOKEN:?isi FLEXCUT_TOKEN di file .env (minimal 24 karakter)}
+      FLEXCUT_ORIGINS: ${FLEXCUT_ORIGINS:-https://aliefneutron.my.id}
+      FLEXCUT_MAX_UPLOAD_MB: ${FLEXCUT_MAX_UPLOAD_MB:-2048}
+    volumes:
+      - flexcut-data:/data
+    expose:
+      - "8791"
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [flexcut]
+    environment:
+      FLEXCUT_DOMAIN: ${FLEXCUT_DOMAIN:?isi FLEXCUT_DOMAIN di file .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+volumes:
+  flexcut-data:
+  caddy-data:
