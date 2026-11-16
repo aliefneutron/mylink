@@ -66,7 +66,7 @@ renderLibrary=function(){
  $('#assetCount').textContent='24 template';
  $('#libraryContent').innerHTML='<div class="malikiLibrary"><button class="primary" data-maliki-open="motion">Buat motion</button>'+
   '<button class="secondary" data-maliki-open="clip">Potong video</button><button class="secondary" data-maliki-open="voice">Kloning suara</button>'+
-  '<button data-maliki-open="connection">'+editorIcon('settings-2',14)+' Koneksi AI & mesin</button>'+
+  '<button data-maliki-open="connection">'+editorIcon('settings-2',14)+' Mesin lokal Motion & Klip</button>'+
   '<button id="openMalikiHistory">Riwayat hasil mesin</button>'+
   '<div class="malikiTemplates">'+malikiCards()+'</div>'+malikiCredit()+'</div>';
  $$('[data-maliki-open]').forEach(button=>button.onclick=()=>showMalikiWorkbench(button.dataset.malikiOpen));
@@ -117,14 +117,15 @@ function malikiClipForm(){
   '<button class="primary" type="submit">Cari momen video</button></form>';
 }
 async function showMalikiWorkbench(view='motion'){
+ if(view==='voice')return showVoicebox();
  if(job||exporting||captureSession)return toast('Selesaikan proses yang berjalan terlebih dahulu.');
  pause();malikiView=view;
  if(view==='motion'){try{await loadMalikiTemplates()}catch(error){return toast(error.message)}}
- const titles={motion:'Motion',clip:'Klip',voice:'Suara',connection:'Koneksi'};
- const content={motion:malikiMotionForm,clip:malikiClipForm,voice:voiceboxForm,connection:malikiConnectionForm};
+ const titles={motion:'Motion',clip:'Klip',connection:'Mesin lokal',voice:'Kloning suara'};
+ const content={motion:malikiMotionForm,clip:malikiClipForm,connection:malikiConnectionForm};
  modal('<div id="malikiWorkbench"><h2>Motion & Klip</h2><div class="malikiTabs">'+
   Object.entries(titles).map(([id,title])=>'<button type="button" data-maliki-view="'+id+'" class="'+(view===id?'chosen':'')+'">'+title+'</button>').join('')+'</div>'+
-  '<p id="malikiConnectionStatus" class="featureNote">'+(view==='voice'?'Kloning suara menggunakan server Voicebox.':malikiConnected?'Mesin lokal tersambung.':'Mesin lokal diperlukan untuk render motion dan klip.')+'</p>'+
+  '<p id="malikiConnectionStatus" class="featureNote">'+(malikiConnected?'Mesin lokal tersambung.':'Mesin lokal diperlukan untuk render motion dan klip.')+'</p>'+
   content[view]()+'<p id="malikiError" class="errorDetail" role="alert" hidden></p>'+malikiCredit()+
   '<div class="actions"><button id="closeModal">Tutup</button></div></div>');
  $$('[data-maliki-view]').forEach(button=>button.onclick=()=>showMalikiWorkbench(button.dataset.malikiView));
@@ -166,7 +167,6 @@ async function showMalikiWorkbench(view='motion'){
  $$('[data-maliki-setup]').forEach(button=>button.onclick=action(()=>runMalikiJob('/api/siapkan',{komponen:button.dataset.malikiSetup})));
  $('#malikiMotionForm')?.addEventListener('submit',action(startMalikiMotion));
  $('#malikiClipForm')?.addEventListener('submit',action(startMalikiClip));
- if(view==='voice')bindVoiceboxForm();
 }
 async function saveMalikiConnection(){
  malikiEngine=malikiEngineURL($('#malikiEngineURL').value);

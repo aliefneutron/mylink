@@ -8,6 +8,14 @@ const voiceboxEngines={
 const voiceboxURLKey='flexcut-voicebox-url';
 let voiceboxToken='';
 let voiceboxTokenOrigin='';
+function showVoicebox(){
+ if(job||exporting||captureSession)return toast('Selesaikan proses yang berjalan terlebih dahulu.');
+ pause();
+ modal('<div id="malikiWorkbench"><h2>Kloning suara dengan Voicebox</h2>'+
+  '<p class="featureNote">Gunakan alamat HTTPS server Voicebox yang aktif. Kloning berjalan di server, tanpa instalasi di komputer Anda.</p>'+
+  voiceboxForm()+'<div class="actions"><button id="closeModal">Tutup</button></div></div>');
+ bindVoiceboxForm();
+}
 function voiceboxForm(){
  return '<form id="voiceboxForm" class="malikiForm">'+
   '<label class="featureLabel">Alamat HTTPS Voicebox<input id="voiceboxURL" type="url" required value="'+esc(localStorage.getItem(voiceboxURLKey)||'')+'" placeholder="https://voice.example.com"></label>'+
@@ -159,9 +167,12 @@ async function runVoiceboxClone(connection,options){
   endJob(token);
   if(!token.cancelled)modal('<h2>Narasi Voicebox belum selesai</h2><p>'+esc(error.message)+'</p><div class="actions">'+
    '<button id="closeModal">Tutup</button><button id="retryVoicebox">Kembali ke Voicebox</button></div>');
-  $('#retryVoicebox')?.addEventListener('click',()=>showMalikiWorkbench('voice'));
+  $('#retryVoicebox')?.addEventListener('click',showVoicebox);
  }finally{
   if(generationPath&&!completed)await voiceboxRequest(connection,generationPath+'/cancel',{method:'POST'}).catch(()=>{});
   if(profilePath)await voiceboxRequest(connection,profilePath,{method:'DELETE'}).catch(()=>{});
  }
+}
+if(new URLSearchParams(location.search).get('panel')==='voicebox'){
+ window.addEventListener('DOMContentLoaded',showVoicebox,{once:true});
 }
