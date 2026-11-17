@@ -26,8 +26,10 @@ const sheet={
     };
   }
 };
+const legacyData=[data[0]];
+const legacySheet={getLastRow:()=>legacyData.length,getRange(row,col,height=1,width=1){return {getValues:()=>Array.from({length:height},(_,i)=>Array.from({length:width},(_,j)=>legacyData[row-1+i]?.[col-1+j]??''))};}};
 const context=vm.createContext({Date,console:{log(){}},
-  SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheet}),flush(){}},
+  SpreadsheetApp:{openById:id=>({getSheetByName:()=>id==='1T6Hs4KLAMvxOO-mMmAt7xKDlJLCRHNqBvMMUH2cXKdg'?legacySheet:sheet,getFormUrl:()=> 'https://docs.google.com/forms/d/test/edit'}),flush(){}},
   FormApp:{openByUrl:()=>({setCustomClosedFormMessage(){},setAcceptingResponses(value){accepting=value;},isAcceptingResponses:()=>accepting})},
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>properties.get(key),setProperty(key,value){properties.set(key,value);}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate(value,zone,format){
@@ -81,6 +83,13 @@ assert.equal(bridge({action:'availability',start:day(18),end:day(18)}).available
 assert.equal(bridge({action:'availability',start:day(19),end:day(19)}).available,false,'Ambiguous old Dinkes rooms require admin review');
 denyLock=true;assert.equal(bridge({action:'book',value:{...booking(),start:day(21),end:day(21)}}).status,503);denyLock=false;
 accepting=true;assert.equal(bridge({action:'book',value:{...booking(),start:day(21),end:day(21)}}).status,503,'Reopened old Google Form must block new bookings');accepting=false;
+const old=new Array(26).fill('');old[0]=new Date();old[1]='Pesanan arsip';old[2]=new Date(day(28)+'T12:00:00+07:00');old[3]=old[2];old[6]='Rapat arsip';old[8]='Ruang Lingkar Barat';
+legacyData.push(old);
+context.siapkanSAPA();
+assert.equal(data.filter(row=>row[21]==='11111111-1111-4111-8111-000000000002').length,1);
+context.siapkanSAPA();
+assert.equal(data.filter(row=>row[21]==='11111111-1111-4111-8111-000000000002').length,1,'Setup must not duplicate legacy imports');
+assert.equal(bridge({action:'availability',start:day(28),end:day(28)}).available,false,'Migrated reservations block the new sheet');
 
 const db=new DatabaseSync(':memory:');
 for(const file of ['0001_init.sql','0002_gallery.sql','0003_visit_time.sql','0004_link_overrides.sql','0005_text_overrides.sql','0006_site_settings.sql','0007_sapa.sql','0008_image_purpose.sql'])db.exec(readFileSync(new URL('migrations/'+file,import.meta.url),'utf8'));

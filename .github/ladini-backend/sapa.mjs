@@ -63,7 +63,7 @@ export async function sapaRoute(request,env,{account,ApiError}) {
     if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(input.url||'')||!/^SAPA-[a-f0-9-]{36,80}$/i.test(input.key||''))throw new ApiError(400,'Isi URL Web App /exec dan kunci SAPA dari pengaturan Apps Script.');
     const config={url:input.url,key:input.key};
     const health=await bridge(config,{action:'health'},ApiError);
-    if(health.spreadsheetId!=='1T6Hs4KLAMvxOO-mMmAt7xKDlJLCRHNqBvMMUH2cXKdg'||health.version!==1)throw new ApiError(400,'Penghubung tidak cocok dengan spreadsheet SAPA.');
+    if(health.spreadsheetId!=='1Ko90jp7tlq6q4ZsBJaUOQTG2oBdMWNHGhNuOourgd10'||health.version!==2)throw new ApiError(400,'Gunakan penghubung SAPA terbaru untuk spreadsheet ORDER RUANG PERTEMUAN.');
     await env.DB.prepare('INSERT INTO sapa_connection VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET encrypted=excluded.encrypted,updated_at=excluded.updated_at').bind(await seal(config,env),Date.now()).run();
     return {connected:true};
   }
