@@ -1059,7 +1059,11 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
     for(const original of baseline) {
       const {node} = original;
       const change = changes.get(original.id);
-      const holder = node.parentElement?.matches('.nav-group') ? node.parentElement : node.closest('li') || node.closest('article.video') || node;
+      const card = node.closest('.source-card');
+      const holder = node.closest('.document-card') ||
+        (node.parentElement?.matches('.nav-group') ? node.parentElement : null) ||
+        node.closest('li') || node.closest('article.video') ||
+        (card?.querySelectorAll('a').length === 1 ? card : node);
       holder.hidden = Boolean(change?.hidden);
       node.innerHTML = original.html;
       if(original.href) node.setAttribute('href', original.href);
