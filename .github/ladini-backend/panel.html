@@ -33,6 +33,7 @@
     <nav class="admin-tabs" aria-label="Menu pengelolaan">
       <button type="button" data-admin-tab="content" aria-current="page">Konten</button>
       <button type="button" data-admin-tab="gallery">Galeri</button>
+      <button type="button" data-admin-tab="sapa">SAPA</button>
       <button type="button" data-admin-tab="accounts" id="admin-accounts-tab" hidden>Akun Editor</button>
       <button type="button" data-admin-tab="security">Kode Akses</button>
       <button type="button" data-admin-tab="appearance" id="admin-appearance-tab" hidden>Tampilan</button>
@@ -93,8 +94,14 @@
         <button class="button profile-button" type="submit">Simpan kode akses</button>
       </form>
     </section>
+    <!-- SAPA ADMIN -->
     <section class="admin-section" aria-labelledby="admin-appearance-title" data-admin-section="appearance" hidden>
-      <div class="admin-section-heading"><h3 id="admin-appearance-title">Tampilan dan navigasi</h3><p>Pengaturan ini diterapkan untuk seluruh pengunjung. Unggah ikon atau background melalui Galeri, lalu pilih gambarnya di sini.</p></div>
+      <div class="admin-section-heading"><h3 id="admin-appearance-title">Tampilan dan navigasi</h3><p>Pengaturan ini diterapkan untuk seluruh pengunjung. Unggah logo aplikasi langsung dari perangkat Anda.</p></div>
+      <form id="admin-logo-upload" class="admin-fields">
+        <label class="admin-wide">Unggah logo aplikasi<input name="logo" type="file" accept="image/png,image/jpeg,image/webp" required><small>PNG, JPG, atau WebP maksimal 1 MB. Logo tidak ditampilkan sebagai foto galeri.</small></label>
+        <img id="admin-logo-preview" class="admin-image-preview" alt="Logo aplikasi saat ini">
+        <div class="admin-line admin-wide"><button class="button profile-button" type="submit">Unggah dan gunakan logo</button><button id="admin-logo-reset" class="button profile-button" type="button">Gunakan logo bawaan</button></div>
+      </form>
       <form id="admin-appearance" class="admin-fields">
         <label>Judul aplikasi<input name="title" maxlength="80" required></label>
         <label>Keterangan aplikasi<input name="subtitle" maxlength="160"></label>
@@ -102,7 +109,6 @@
         <label>Warna aksen<input name="accent" type="color"></label>
         <label>Warna background<input name="background" type="color"></label>
         <label>Ikon dan logo aplikasi<select name="logoId"><option value="">Logo bawaan LADINI</option></select></label>
-        <label class="admin-wide">Gambar background<select name="backgroundId"><option value="">Tanpa gambar background</option></select></label>
         <button class="button profile-button" type="submit">Simpan tampilan</button>
       </form>
       <div class="admin-section-heading admin-tabs-heading"><h3>Tab navigasi tambahan</h3><p>Tambahkan halaman berisi teks atau tautan menuju halaman dan layanan lain.</p></div>

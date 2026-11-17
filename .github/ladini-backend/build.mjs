@@ -14,6 +14,16 @@ if (endpoint) {
 
 const asset = (name) => readFileSync(new URL(name, import.meta.url), 'utf8');
 let html = readFileSync(input, 'utf8');
+const sapaStart=html.indexOf('<div data-directory-page="layanan/penjadwalan-kegiatan"');
+if(sapaStart<0)throw new Error('Halaman penjadwalan tidak ditemukan.');
+const sapaEnd=html.indexOf('<div data-directory-page=',sapaStart+10);
+if(sapaEnd<0)throw new Error('Batas halaman penjadwalan tidak ditemukan.');
+let sapaPage=html.slice(sapaStart,sapaEnd).replace(/<section id="sapa-app"[\s\S]*?<\/section>\s*/,'');
+sapaPage=sapaPage.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g,card=>card.includes('https://forms.gle/8ucBygHA7KcqdBEq5')?'':card);
+sapaPage=sapaPage.replace('<div class="directory-content">',asset('sapa-public.html')+'\n<div class="directory-content">');
+html=html.slice(0,sapaStart)+sapaPage+html.slice(sapaEnd);
+const panelHTML=asset('panel.html').replace('<!-- SAPA ADMIN -->',()=>asset('sapa-admin.html'));
+const panelJS=asset('panel.js').replace(/\}\)\(\);\s*$/,()=>asset('sapa-panel.js')+'\n})();');
 // The existing carousel now displays uploads from the gallery API.
 html = html.replace(/<div class="gallery">[\s\S]*?<\/div>/, '<div class="gallery"><p class="gallery-empty">Memuat galeri…</p></div>');
 html = html.replace(/(<span id="gallery-status"[^>]*>)[\s\S]*?(<\/span>)/, '$1–$2');
@@ -55,6 +65,7 @@ const publicEnd = html.indexOf('<button type="button" class="admin-entry"');
 const publicHTML = publicEnd < 0 ? html : html.slice(0,publicEnd);
 const publicTail = publicEnd < 0 ? '' : html.slice(publicEnd);
 html = publicHTML.replace(/<(p|h[1-4]|li)\b([^>]*)>([\s\S]*?)<\/\1>/g,(all,tag,attributes,body)=>{
+  if (/id="(?:sapa-status|sapa-availability|sapa-list-count)"/.test(attributes)) return '<'+tag+attributes.replace(/ data-text-key="[^"]*"/g,'')+'>'+body+'</'+tag+'>';
   if (/<(?:a|button|input|select|textarea|iframe|video)\b/i.test(body)) return all;
   const content = plain(body);
   if (content.length < 2 || content.length > 5000) return all;
@@ -91,11 +102,11 @@ if (html.includes('id="admin-dialog"')) {
     throw new Error('Struktur integrasi admin tidak cocok.');
   }
   html = html.replace(css, () => '<style>' + asset('panel.css') + '</style>')
-    .replace(panel, () => asset('panel.html').trim())
-    .replace(script, () => contentIndex + '\n<script>' + asset('panel.js') + '</script>');
+    .replace(panel, () => panelHTML.trim())
+    .replace(script, () => contentIndex + '\n<script>' + panelJS + '</script>');
 } else {
   insertBefore('</head>', apiTag + '\n<style>' + asset('panel.css') + '</style>');
   insertBefore('<section aria-labelledby="video-title"', '<section id="managed-extras" class="glass content-card block" aria-labelledby="managed-title" hidden><h2 id="managed-title">Pengumuman dan tautan tambahan</h2><ul class="managed-items"></ul></section>');
-  insertBefore('</body>', asset('panel.html') + '\n' + contentIndex + '\n<script>' + asset('panel.js') + '</script>');
+  insertBefore('</body>', panelHTML + '\n' + contentIndex + '\n<script>' + panelJS + '</script>');
 }
 writeFileSync(output, html);

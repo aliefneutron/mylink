@@ -1,0 +1,26 @@
+<section id="sapa-app" class="glass content-card block" aria-labelledby="sapa-title">
+  <div class="sapa-heading"><div><p class="admin-eyebrow">SAPA · PENJADWALAN KEGIATAN</p><h2 id="sapa-title">Pesan Ruang Lingkar Barat</h2><p>Satu pemesanan mengunci ruangan seharian, termasuk semua tanggal dalam rentang kegiatan. Jam dicatat sebagai informasi kegiatan.</p></div><span class="sapa-badge">Seharian</span></div>
+  <p id="sapa-status" class="sapa-notice" role="status">Memeriksa sambungan pemesanan…</p>
+  <form id="sapa-form">
+    <fieldset id="sapa-fields" disabled class="sapa-fields">
+      <label>Penanggung jawab kegiatan<input name="person" maxlength="160" autocomplete="name" required></label>
+      <label>Bidang<select name="department" required><option value="">Pilih bidang</option><option>Sekretariat</option><option>Pelayanan Kesehatan</option><option>Kesehatan Masyarakat</option><option>Sumber Daya Kesehatan</option><option>Pengendalian Penduduk dan keluarga Berencana</option><option>Pencegahan dan Pengendalian Penyakit</option></select></label>
+      <label>Tanggal mulai<input name="start" type="date" required></label><label>Tanggal selesai<input name="end" type="date" required></label>
+      <label>Jam mulai kegiatan<input name="startTime" type="time" required></label><label>Jam selesai kegiatan<input name="endTime" type="time" required></label>
+      <p id="sapa-availability" class="sapa-wide sapa-notice" aria-live="polite">Pilih tanggal untuk mengecek ketersediaan.</p>
+      <label class="sapa-wide">Uraian kegiatan<textarea name="activity" maxlength="1000" rows="3" required></textarea></label>
+      <label class="sapa-wide">Tujuan kegiatan<textarea name="purpose" maxlength="1000" rows="2" required></textarea></label>
+      <label>Daftar undangan (opsional)<textarea name="invitees" maxlength="1000" rows="2"></textarea></label>
+      <label>Rencana hasil kegiatan / keluaran<textarea name="output" maxlength="1000" rows="2" required></textarea></label>
+      <label class="sapa-wide">Tautan surat / lampiran (opsional)<input name="attachment" type="url" maxlength="2048" placeholder="https://drive.google.com/…"><small>Gunakan tautan dokumen yang dapat diakses petugas.</small></label>
+      <label class="sapa-wide">Keterangan (opsional)<textarea name="notes" maxlength="1000" rows="2"></textarea></label>
+      <label class="sapa-trap" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+      <button id="sapa-submit" class="button profile-button" type="submit">Pesan ruangan seharian</button>
+      <button id="sapa-new" class="button profile-button" type="button">Kosongkan formulir</button>
+    </fieldset>
+  </form>
+  <div class="sapa-heading sapa-list-heading"><div><h3>Daftar pemesanan</h3><p>Nama pemesan, bidang, kegiatan, dan tanggal penggunaan ruangan.</p></div><button id="sapa-refresh" class="button profile-button" type="button">Perbarui daftar</button></div>
+  <div class="sapa-filters"><label>Tampilkan<select id="sapa-period"><option value="recent">Dipesan 30 hari terakhir</option><option value="upcoming">Jadwal mendatang</option></select></label><label>Bidang<select id="sapa-department-filter"><option value="">Semua bidang</option></select></label><label>Cari pemesan / kegiatan<input id="sapa-search" type="search" placeholder="Nama atau kegiatan"></label></div>
+  <p id="sapa-list-count" class="admin-form-hint" aria-live="polite"></p>
+  <div class="sapa-table-wrap"><table class="sapa-table"><thead><tr><th>Tanggal kegiatan</th><th>Penanggung jawab</th><th>Bidang</th><th>Kegiatan</th></tr></thead><tbody id="sapa-bookings"><tr><td colspan="4">Daftar belum dimuat.</td></tr></tbody></table></div>
+</section>

@@ -1,3 +1,4 @@
+import { sapaRoute } from './sapa.mjs';
 const kinds = new Set(['video', 'layanan', 'informasi', 'pengumuman', 'tautan']);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const hour = 3600000;
@@ -167,7 +168,7 @@ function validateSettings(input) {
     return {id:tab.id,label,type:page?'page':'link',url,body};
   });
   return {title,subtitle,theme:input.theme,accent:input.accent,background:input.background,
-    logoId:input.logoId||'',backgroundId:input.backgroundId||'',tabs};
+    logoId:input.logoId||'',backgroundId:'',tabs};
 }
 
 async function login(request, env, now) {
@@ -287,10 +288,11 @@ async function route(request, env, origin) {
   const now = Date.now();
   const ok = (data, status = 200) => respond(data, status, origin);
   if (method === 'OPTIONS') return ok(null, 204);
+  if (pathname === '/api/sapa' || pathname.startsWith('/api/sapa/')) return ok(await sapaRoute(request,env,{ApiError}));
   if (method === 'GET' && pathname === '/api/content') return ok({ items: await listContent(db), overrides: await listOverrides(db), settings:await readSettings(db) });
   if (method === 'GET' && pathname === '/api/stats') return ok(await getStats(db, now, new URL(request.url).searchParams.get('tz') || 'Asia/Jakarta'));
   if (method === 'GET' && pathname === '/api/images') {
-    return ok({ images: (await db.prepare('SELECT id, caption, created_at FROM images ORDER BY created_at DESC, id').all()).results });
+    return ok({ images: (await db.prepare("SELECT id, caption, created_at FROM images WHERE purpose='gallery' ORDER BY created_at DESC, id").all()).results });
   }
   const imageId = pathname.match(/^\/api\/images\/([a-f0-9-]+)$/)?.[1];
   if (method === 'GET' && uuid.test(imageId || '')) {
@@ -309,12 +311,13 @@ async function route(request, env, origin) {
   if (!pathname.startsWith('/api/admin')) throw new ApiError(404, 'Halaman tidak ditemukan.');
 
   const { account, hash } = await authenticate(request, db, now);
+  if (pathname === '/api/admin/sapa' || pathname.startsWith('/api/admin/sapa/')) return ok(await sapaRoute(request,env,{account,ApiError}));
   if (method === 'GET' && pathname === '/api/admin') return ok({
     account,
     items: await listContent(db),
     overrides: await listOverrides(db),
     settings:await readSettings(db),
-    images: (await db.prepare('SELECT id, caption, created_at FROM images ORDER BY created_at DESC, id').all()).results,
+    images: (await db.prepare('SELECT id, caption, created_at, purpose FROM images ORDER BY created_at DESC, id').all()).results,
     accounts: account.role === 'owner'
       ? (await db.prepare('SELECT id, name, role, disabled FROM accounts ORDER BY created_at').all()).results : []
   });
@@ -363,7 +366,9 @@ async function route(request, env, origin) {
     await db.prepare('DELETE FROM link_overrides WHERE id = ?').bind(overrideId).run();
     return ok(null, 204);
   }
-  if (method === 'POST' && pathname === '/api/admin/images') {
+  if (method === 'POST' && ['/api/admin/images','/api/admin/logo'].includes(pathname)) {
+    const isLogo = pathname === '/api/admin/logo';
+    if (isLogo && account.role !== 'owner') throw new ApiError(403,'Hanya pemilik dapat mengganti logo aplikasi.');
     const input = await json(request, 1450000);
     const caption = text(input.caption, 200);
     const match = typeof input.data === 'string' && input.data.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
@@ -376,12 +381,13 @@ async function route(request, env, origin) {
       (match[1] === 'image/png' && starts(137,80,78,71,13,10,26,10)) ||
       (match[1] === 'image/webp' && starts(82,73,70,70) && String.fromCharCode(...bytes.slice(8,12)) === 'WEBP');
     if (!valid || bytes.length > 1048576) throw new ApiError(400, 'Isi gambar atau ukurannya tidak valid.');
-    const saved = await db.prepare(`INSERT INTO images SELECT ?, ?, ?, ?, ?, ?
+    const imageId = crypto.randomUUID();
+    const saved = await db.prepare(`INSERT INTO images (id,caption,mime,data,created_at,created_by,purpose) SELECT ?, ?, ?, ?, ?, ?, ?
       WHERE (SELECT COUNT(*) FROM images) < 100 AND
       (SELECT COALESCE(SUM(length(data)), 0) FROM images) + ? <= 69905066`)
-      .bind(crypto.randomUUID(), caption, match[1], match[2], now, account.id, match[2].length).run();
+      .bind(imageId, caption, match[1], match[2], now, account.id, isLogo ? 'logo' : 'gallery', match[2].length).run();
     if (!saved.meta.changes) throw new ApiError(409, 'Galeri penuh. Hapus gambar yang sudah tidak digunakan.');
-    return ok(null, 204);
+    return isLogo ? ok({id:imageId},201) : ok(null,204);
   }
   const deletedImage = pathname.match(/^\/api\/admin\/images\/([a-f0-9-]+)$/)?.[1];
   if (method === 'DELETE' && uuid.test(deletedImage || '')) {

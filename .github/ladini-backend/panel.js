@@ -212,10 +212,10 @@
     siteSettings = {value:{...defaultSettings,...(settings?.value||{})},version:settings?.version||0};
     fillAppearance(images);
     activate('admin-count-links').textContent = currentItems.filter(item=>!item.hidden).length;
-    activate('admin-count-images').textContent = images.length;
+    activate('admin-count-images').textContent = images.filter(image=>image.purpose!=='logo').length;
     showTab(activeTab);
     renderItems();
-    renderImages(images);
+    renderImages(images.filter(image=>image.purpose!=='logo'));
     void request('stats?tz=' + encodeURIComponent(timezone)).then((stats) => {
       activate('admin-count-visitors').textContent = new Intl.NumberFormat('id-ID').format(stats.visitors_today);
     }).catch(() => {});
@@ -480,7 +480,7 @@
     document.documentElement.dataset.theme=light?'light':'dark';
     document.documentElement.style.setProperty('--green',light&&config.accent===defaultSettings.accent?'#086246':config.accent);
     document.documentElement.style.setProperty('--site-background',light&&config.background===defaultSettings.background?'#f2f7f4':config.background);
-    document.body.style.backgroundImage=config.backgroundId ? 'linear-gradient('+(light?'#f6fff3dc,#f6fff3dc':'#0d1228d9,#0d1228d9')+'),url("'+root+'/api/images/'+config.backgroundId+'")' : '';
+    document.body.style.backgroundImage='';
     document.querySelector('.brand strong').textContent=config.title;
     document.querySelector('.brand small').textContent=config.subtitle;
     document.querySelector('.footer strong').textContent=config.title;
@@ -543,14 +543,15 @@
 
   function fillAppearance(images) {
     const config={...defaultSettings,...siteSettings.value};
-    for(const field of ['logoId','backgroundId']){
+    for(const field of ['logoId']){
       const select=appearance.elements[field];
       function option(label,value) { const node=element('option',label);node.value=value;return node; }
       select.replaceChildren(option(field==='logoId'?'Logo bawaan LADINI':'Tanpa gambar background',''));
       for(const image of images)select.add(option(image.caption,image.id));
       if(config[field]&&!images.some(image=>image.id===config[field]))select.add(option('Gambar yang sebelumnya dipilih',config[field]));
     }
-    for(const field of ['title','subtitle','theme','accent','background','logoId','backgroundId'])appearance.elements[field].value=config[field];
+    for(const field of ['title','subtitle','theme','accent','background','logoId'])appearance.elements[field].value=config[field];
+    activate('admin-logo-preview').src=config.logoId?root+'/api/images/'+config.logoId:originalLogo[0].src;
     activate('admin-tab-list').replaceChildren(...config.tabs.map((tab,index)=>{
       const rowNode=row(tab.label,tab.type==='page'?'Halaman baru':tab.url,
         action('Edit',async()=>{
@@ -577,6 +578,7 @@
     }));
   }
   async function saveAppearance(value) {
+    value.backgroundId='';
     siteSettings=await request('admin/settings',{method:'PATCH',auth:true,body:{value,version:siteSettings.version}});
     await Promise.all([refreshContent(),refreshDashboard()]);
   }
@@ -587,6 +589,22 @@
       await saveAppearance({...defaultSettings,...siteSettings.value,...values});
       notice('Tampilan aplikasi sudah diperbarui.');
     });
+  });
+  activate('admin-logo-upload').addEventListener('submit',event=>{
+    event.preventDefault();
+    const form=event.currentTarget,file=form.elements.logo.files[0];
+    if(!file)return;
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>1048576){notice('Pilih logo PNG, JPG, atau WebP maksimal 1 MB.',true);return;}
+    void run(event.submitter,async()=>{
+      const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Logo gagal dibaca.'));reader.readAsDataURL(file);});
+      const result=await request('admin/logo',{method:'POST',auth:true,body:{data,caption:'Logo aplikasi'}});
+      await saveAppearance({...defaultSettings,...siteSettings.value,logoId:result.id});
+      form.reset();
+      notice('Logo aplikasi berhasil diganti.');
+    });
+  });
+  activate('admin-logo-reset').addEventListener('click',event=>{
+    void run(event.currentTarget,async()=>{await saveAppearance({...defaultSettings,...siteSettings.value,logoId:''});notice('Logo bawaan digunakan kembali.');});
   });
   function updateTabFields() {
     const isPage=tabForm.elements.type.value==='page';
