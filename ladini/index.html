@@ -482,10 +482,12 @@ body { background-color: var(--site-background,#0d1228); background-size: cover;
 .sapa-trap { display:none!important; }
 .sapa-list-heading { margin-top:35px; }
 .sapa-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:18px 0; }
-.sapa-table-wrap { overflow:auto; max-width:100%; }
+.sapa-table-wrap { overflow:auto; max-width:100%; max-height:min(70vh,var(--sapa-list-height,650px)); overscroll-behavior:contain; scrollbar-gutter:stable; }
 .sapa-table { width:100%; border-collapse:collapse; font-size:13px; text-align:left; }
 .sapa-table th,.sapa-table td { padding:13px 10px; border-bottom:1px solid var(--stroke); vertical-align:top; min-width:125px; overflow-wrap:anywhere; }
 .sapa-table th { color:var(--muted); font-weight:600; }
+.sapa-table thead th { position:sticky; top:0; z-index:1; background:#17243e; }
+:root[data-theme="light"] .sapa-table thead th { background:#f4faf6; }
 .sapa-setup { padding:15px; margin-bottom:20px; border:1px solid var(--stroke); border-radius:12px; font-size:13px; line-height:1.8; }
 .sapa-setup summary { cursor:pointer; font-weight:600; }
 .sapa-setup a { color:var(--green); text-decoration:underline; }
@@ -752,7 +754,7 @@ body { background-color: var(--site-background,#0d1228); background-size: cover;
   <div class="sapa-heading"><div><h2 id="sapa-reservations-title" data-text-key="43ff9efe1bb0d8c35505">Daftar pemesanan</h2><p data-text-key="cfa7dad54a91faac4b35">Nama pemesan, bidang, kegiatan, dan tanggal penggunaan ruangan.</p></div><button id="sapa-refresh" class="button profile-button" type="button">Perbarui daftar</button></div>
   <div class="sapa-filters"><label>Tampilkan<select id="sapa-period"><option value="recent">Dipesan 30 hari terakhir</option><option value="upcoming">Jadwal mendatang</option></select></label><label>Bidang<select id="sapa-department-filter"><option value="">Semua bidang</option></select></label><label>Cari pemesan / kegiatan<input id="sapa-search" type="search" placeholder="Nama atau kegiatan"></label></div>
   <p id="sapa-list-count" class="admin-form-hint" aria-live="polite"></p>
-  <div class="sapa-table-wrap"><table class="sapa-table"><thead><tr><th>Tanggal kegiatan</th><th>Penanggung jawab</th><th>Bidang</th><th>Kegiatan</th></tr></thead><tbody id="sapa-bookings"><tr><td colspan="4">Daftar belum dimuat.</td></tr></tbody></table></div>
+  <div class="sapa-table-wrap" tabindex="0" role="region" aria-labelledby="sapa-reservations-title"><table class="sapa-table"><thead><tr><th>Tanggal kegiatan</th><th>Penanggung jawab</th><th>Bidang</th><th>Kegiatan</th></tr></thead><tbody id="sapa-bookings"><tr><td colspan="4">Daftar belum dimuat.</td></tr></tbody></table></div>
 </section>
 
 <div class="directory-content">
@@ -1918,12 +1920,22 @@ if (requestedButton && location.protocol !== 'file:') openVideo(requestedButton)
   sapaForm.elements.start.min=sapaForm.elements.end.min=sapaToday();
   function sapaNotice(node,message,error=false){node.textContent=message;node.dataset.error=String(error);}
   function sapaResetRequest(){sapaRequestId=crypto.randomUUID();try{sessionStorage.setItem('ladini-sapa-request',sapaRequestId);}catch {}}
+  const sapaTable=activate('sapa-bookings').closest('table');
+  const sapaTableWrap=sapaTable.parentElement;
+  function sizeSapaList(){
+    const headHeight=sapaTable.tHead.getBoundingClientRect().height;
+    if(!headHeight)return;
+    const rowHeight=[...activate('sapa-bookings').rows].slice(0,10).reduce((height,row)=>height+row.getBoundingClientRect().height,0);
+    sapaTableWrap.style.setProperty('--sapa-list-height',Math.ceil(headHeight+rowHeight)+'px');
+  }
+  const sapaTableObserver=new ResizeObserver(sizeSapaList);
+  sapaTableObserver.observe(sapaTable);
   function renderSapaBookings(){
     const term=activate('sapa-search').value.toLocaleLowerCase('id'),dept=activate('sapa-department-filter').value;
     const cutoff=new Date(Date.parse(sapaToday())-29*86400000).toISOString().slice(0,10),today=sapaToday();
     const upcoming=activate('sapa-period').value==='upcoming';
     const items=sapaBookings.filter(item=>(upcoming?item.end>=today:item.created>=cutoff&&item.created<=today)&&(!dept||item.department===dept)&&(item.person+' '+item.activity).toLocaleLowerCase('id').includes(term)).sort((a,b)=>a.start.localeCompare(b.start));
-    activate('sapa-list-count').textContent=sapaConnected?items.length+' pemesanan · Ruang Lingkar Barat · Seharian':'';
+    activate('sapa-list-count').textContent=sapaConnected?items.length+' pemesanan · Ruang Lingkar Barat · Seharian'+(items.length>10?' · Gulir tabel untuk melihat data lainnya.':''):'';
     const rows=items.map(item=>{
       const tr=element('tr');
       for(const value of [item.start===item.end?item.start:item.start+' – '+item.end,item.person,item.department,item.activity])tr.append(element('td',value));
@@ -1931,6 +1943,8 @@ if (requestedButton && location.protocol !== 'file:') openVideo(requestedButton)
     });
     if(!rows.length){const tr=element('tr'),td=element('td',sapaConnected?'Belum ada pemesanan yang sesuai filter.':'Daftar tersedia setelah spreadsheet tersambung.');td.colSpan=4;tr.append(td);rows.push(tr);}
     activate('sapa-bookings').replaceChildren(...rows);
+    sapaTableWrap.scrollTop=0;
+    requestAnimationFrame(sizeSapaList);
   }
   async function loadSapa(){
     if(sapaLoading)return;

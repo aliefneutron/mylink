@@ -9,12 +9,22 @@
   sapaForm.elements.start.min=sapaForm.elements.end.min=sapaToday();
   function sapaNotice(node,message,error=false){node.textContent=message;node.dataset.error=String(error);}
   function sapaResetRequest(){sapaRequestId=crypto.randomUUID();try{sessionStorage.setItem('ladini-sapa-request',sapaRequestId);}catch {}}
+  const sapaTable=activate('sapa-bookings').closest('table');
+  const sapaTableWrap=sapaTable.parentElement;
+  function sizeSapaList(){
+    const headHeight=sapaTable.tHead.getBoundingClientRect().height;
+    if(!headHeight)return;
+    const rowHeight=[...activate('sapa-bookings').rows].slice(0,10).reduce((height,row)=>height+row.getBoundingClientRect().height,0);
+    sapaTableWrap.style.setProperty('--sapa-list-height',Math.ceil(headHeight+rowHeight)+'px');
+  }
+  const sapaTableObserver=new ResizeObserver(sizeSapaList);
+  sapaTableObserver.observe(sapaTable);
   function renderSapaBookings(){
     const term=activate('sapa-search').value.toLocaleLowerCase('id'),dept=activate('sapa-department-filter').value;
     const cutoff=new Date(Date.parse(sapaToday())-29*86400000).toISOString().slice(0,10),today=sapaToday();
     const upcoming=activate('sapa-period').value==='upcoming';
     const items=sapaBookings.filter(item=>(upcoming?item.end>=today:item.created>=cutoff&&item.created<=today)&&(!dept||item.department===dept)&&(item.person+' '+item.activity).toLocaleLowerCase('id').includes(term)).sort((a,b)=>a.start.localeCompare(b.start));
-    activate('sapa-list-count').textContent=sapaConnected?items.length+' pemesanan · Ruang Lingkar Barat · Seharian':'';
+    activate('sapa-list-count').textContent=sapaConnected?items.length+' pemesanan · Ruang Lingkar Barat · Seharian'+(items.length>10?' · Gulir tabel untuk melihat data lainnya.':''):'';
     const rows=items.map(item=>{
       const tr=element('tr');
       for(const value of [item.start===item.end?item.start:item.start+' – '+item.end,item.person,item.department,item.activity])tr.append(element('td',value));
@@ -22,6 +32,8 @@
     });
     if(!rows.length){const tr=element('tr'),td=element('td',sapaConnected?'Belum ada pemesanan yang sesuai filter.':'Daftar tersedia setelah spreadsheet tersambung.');td.colSpan=4;tr.append(td);rows.push(tr);}
     activate('sapa-bookings').replaceChildren(...rows);
+    sapaTableWrap.scrollTop=0;
+    requestAnimationFrame(sizeSapaList);
   }
   async function loadSapa(){
     if(sapaLoading)return;
