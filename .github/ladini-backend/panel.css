@@ -116,6 +116,12 @@ body { background-color: var(--site-background,#0d1228); background-size: cover;
 .admin-image-grid .button { min-height: 36px; font-size: 12px; }
 .public-image-grid figure { margin: 0; padding: 9px; overflow: hidden; }
 .public-image-grid figcaption { padding: 9px; font-size: 13px; overflow-wrap: anywhere; }
+.gallery figure { margin: 0; }
+.gallery figure[hidden] { display: none; }
+.gallery figure img { height: 240px; min-height: 0; object-fit: contain; }
+.gallery figcaption { padding-top: 10px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.gallery-empty { padding: 24px 0; color: var(--muted); }
+.gallery-controls button:disabled { opacity: .4; cursor: default; }
 .ladini-local-clock { width: min(1200px, calc(100% - 72px)); margin: 12px auto 0; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 5px; font-size: 12px; color: var(--muted); }
 .ladini-local-clock small { color: var(--green); font-size: 11px; }
 .visitor-widget .section-head { flex-wrap: wrap; }

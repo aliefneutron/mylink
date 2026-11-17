@@ -672,18 +672,24 @@
   const statsZone = document.querySelector('#statistik .section-head small');
   statsZone.textContent = 'Waktu lokal · ' + timezone.replaceAll('_', ' ');
 
+  const gallery = document.querySelector('.gallery');
+  let gallerySlide = 0;
+  function showGallerySlide(step = 0) {
+    const slides = [...gallery.querySelectorAll('figure')];
+    gallerySlide = slides.length ? (gallerySlide + step + slides.length) % slides.length : 0;
+    slides.forEach((slide, index) => { slide.hidden = index !== gallerySlide; });
+    activate('gallery-status').textContent = slides.length ? (gallerySlide + 1) + ' / ' + slides.length : '0 / 0';
+    activate('prev').disabled = activate('next').disabled = slides.length < 2;
+  }
+  activate('prev').addEventListener('click', () => showGallerySlide(-1));
+  activate('next').addEventListener('click', () => showGallerySlide(1));
   async function refreshGallery() {
     const { images } = await request('images');
-    let section = activate('managed-gallery');
-    if (!section) {
-      section = element('section', '', 'block');
-      section.id = 'managed-gallery';
-      section.append(element('h2', 'Galeri kegiatan'), element('div', '', 'public-image-grid'));
-      activate('home-view').insertBefore(section, activate('statistik'));
-    }
-    section.hidden = !images.length;
-    section.querySelector('div').replaceChildren(...images.map((image) => {
-      const figure = element('figure', '', 'glass');
+    const selectedId = gallery.querySelector('figure:not([hidden])')?.dataset.imageId;
+    activate('managed-gallery')?.remove();
+    gallery.replaceChildren(...images.map((image) => {
+      const figure = element('figure');
+      figure.dataset.imageId = image.id;
       const photo = element('img');
       photo.src = root + '/api/images/' + image.id;
       photo.alt = image.caption;
@@ -691,6 +697,9 @@
       figure.append(photo, element('figcaption', image.caption));
       return figure;
     }));
+    gallerySlide = Math.max(0, images.findIndex(image => image.id === selectedId));
+    if (!images.length) gallery.append(element('p', 'Belum ada gambar. Unggah melalui Admin → Galeri.', 'gallery-empty'));
+    showGallerySlide();
   }
 
   let visitor = crypto.randomUUID();
@@ -734,6 +743,9 @@
   document.addEventListener('visibilitychange', visit);
   window.setInterval(visit, 60000);
   void refreshContent().catch(() => {});
-  void refreshGallery().catch(() => {});
+  void refreshGallery().catch(() => {
+    gallery.replaceChildren(element('p', 'Galeri belum dapat dimuat. Silakan muat ulang halaman.', 'gallery-empty'));
+    showGallerySlide();
+  });
   void visit();
 })();

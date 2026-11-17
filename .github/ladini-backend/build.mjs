@@ -14,6 +14,10 @@ if (endpoint) {
 
 const asset = (name) => readFileSync(new URL(name, import.meta.url), 'utf8');
 let html = readFileSync(input, 'utf8');
+// The existing carousel now displays uploads from the gallery API.
+html = html.replace(/<div class="gallery">[\s\S]*?<\/div>/, '<div class="gallery"><p class="gallery-empty">Memuat galeri…</p></div>');
+html = html.replace(/(<span id="gallery-status"[^>]*>)[\s\S]*?(<\/span>)/, '$1–$2');
+html = html.replace(/const images = \[\.\.\.document\.querySelectorAll\('\.gallery img'\)\];[\s\S]*?document\.querySelector\('#next'\)\.addEventListener\('click', \(\) => showSlide\(1\)\);/, '');
 // Remove the discontinued service from both navigation and its built-in page.
 html = html.replace(/<div data-directory-page="layanan\/penomoran-siva"[\s\S]*?(?=<div data-directory-page=|<\/main>)/, '');
 html = html.replace(/<a\b[^>]*href="#layanan\/penomoran-siva"[^>]*>[\s\S]*?<\/a>/g, '');
