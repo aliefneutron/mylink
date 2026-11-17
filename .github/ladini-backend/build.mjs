@@ -26,13 +26,16 @@ function plain(value) {
     .replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>')
     .replace(/\s+/g,' ').trim();
 }
-html = html.replace(/<a\b([^>]*?)href="([^"]+)"([^>]*)>([\s\S]*?)<\/a>/g, (all,before,href,after,body) => {
+html = html.replace(/<a\b([^>]*?)href="([^"]+)"([^>]*)>([\s\S]*?)<\/a>/g, (all,before,href,after,body,offset,sourceHTML) => {
   if (!/^(https?:|#)/.test(href) || ['#konten','#beranda'].includes(href) || /class="(?:skip|brand)"/.test(before+after)) return all;
   const id = key('link:' + href);
   const title = plain(body);
   if (!title) return all;
   const kind = href.startsWith('#layanan') ? 'layanan' : href.startsWith('#informasi') ? 'informasi' : 'tautan';
-  index.set(id, {id,kind,title:title.slice(0,160),url:href.replace(/&amp;/g,'&'),description:'Tautan bawaan LADINI'});
+  const start = sourceHTML.lastIndexOf('<article',offset);
+  const insideCard = start >= 0 && sourceHTML.indexOf('</article>',start) > offset;
+  const context = insideCard ? plain(sourceHTML.slice(start,offset)).slice(0,700) : '';
+  index.set(id, {id,kind,title:title.slice(0,160),url:href.replace(/&amp;/g,'&'),description:context || 'Tautan bawaan LADINI'});
   return '<a' + before.replace(/ data-link-key="[^"]*"/g,'') + 'href="' + href + '"' +
     after.replace(/ data-link-key="[^"]*"/g,'') + ' data-link-key="' + id + '">' + body + '</a>';
 });

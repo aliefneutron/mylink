@@ -116,6 +116,7 @@
     editing = '';
     itemForm.reset();
     itemForm.elements.kind.disabled = false;
+    itemForm.elements.description.disabled = false;
     activate('admin-save').textContent = 'Tambah tautan';
     activate('admin-cancel').hidden = true;
   }
@@ -200,20 +201,21 @@
 
   function renderItems() {
     const term = activate('admin-filter').value.trim().toLocaleLowerCase('id');
-    const items = currentItems.filter((item) => (item.title + ' ' + labels[item.kind] + ' ' + item.url).toLocaleLowerCase('id').includes(term));
+    const items = currentItems.filter((item) => (item.title + ' ' + labels[item.kind] + ' ' + item.url + ' ' + item.description).toLocaleLowerCase('id').includes(term));
     activate('admin-items').replaceChildren(...(items.length ? items.map((item) => {
       if(item.hidden) return row(item.title,labels[item.kind]+' · Dihapus',action('Pulihkan',async()=>{
         await request('admin/overrides/'+item.id.slice(5),{method:'POST',auth:true});
         await Promise.all([refreshDashboard(),refreshContent()]);
         notice('Tautan dipulihkan.');
       }));
-      return row(item.title, labels[item.kind] + ' · ' + item.url,
+      return row(item.title, labels[item.kind] + ' · ' + (item.description || item.url),
       action('Edit', async () => {
         editing = item.id;
         for (const field of ['kind', 'title', 'url', 'description']) itemForm.elements[field].value = item[field];
         activate('admin-save').textContent = 'Simpan perubahan';
         activate('admin-cancel').hidden = false;
         itemForm.elements.kind.disabled = item.id.startsWith('base-');
+        itemForm.elements.description.disabled = item.id.startsWith('base-');
         itemForm.elements.title.focus();
       }),
       action('Hapus', async () => {
