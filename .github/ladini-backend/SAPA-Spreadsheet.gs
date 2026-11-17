@@ -58,7 +58,8 @@ function sapaRows_() {
 }
 function sapaPublic_(item,admin) {
   var result={id:item.id,person:item.person,activity:item.activity,department:item.department,start:item.start,end:item.end,created:item.created,status:item.status,room:item.room==='uncertain'?'Lokasi lama perlu diperiksa':'Ruang Lingkar Barat'};
-  if(admin)Object.assign(result,{startTime:sapaTime_(item.raw[4]),endTime:sapaTime_(item.raw[5]),purpose:String(item.raw[7]||''),invitees:String(item.raw[9]||''),output:String(item.raw[17]||''),attachment:String(item.raw[19]||item.raw[18]||''),notes:String(item.raw[20]||''),requestId:item.requestId});
+  result.startTime=sapaTime_(item.raw[4]);result.endTime=sapaTime_(item.raw[5]);
+  if(admin)Object.assign(result,{purpose:String(item.raw[7]||''),invitees:String(item.raw[9]||''),output:String(item.raw[17]||''),attachment:String(item.raw[19]||item.raw[18]||''),notes:String(item.raw[20]||''),requestId:item.requestId});
   return result;
 }
 function sapaTime_(value) {return value instanceof Date?Utilities.formatDate(value,SAPA_ZONE,'HH:mm'):String(value||'').slice(0,5);}

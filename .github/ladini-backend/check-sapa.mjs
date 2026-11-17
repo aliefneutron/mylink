@@ -111,6 +111,9 @@ try {
   await api('admin/sapa/connection',200,{method:'POST',session,body:{url:'https://script.google.com/macros/s/test-bridge/exec',key:bridgeKey}});
   assert.equal(db.prepare('SELECT encrypted FROM sapa_connection').get().encrypted.includes(bridgeKey),false,'Connection key stored encrypted');
   const publicData=await api('sapa',200);assert.equal(publicData.connected,true);assert.equal(JSON.stringify(publicData).includes(bridgeKey),false);
+  assert.ok(publicData.bookings.length);
+  assert.equal('startTime' in publicData.bookings[0],true);
+  for(const item of publicData.bookings){assert.equal(item.status==='dibatalkan',false);for(const field of ['notes','purpose','attachment','invitees','requestId'])assert.equal(field in item,false);}
   await api('sapa/bookings',403,{method:'POST',body:booking(),from:'https://other.test'});
   const requests=await Promise.all([api('sapa/bookings',200,{method:'POST',body:{...booking(),start:day(25),end:day(25)}}),api('sapa/bookings',409,{method:'POST',body:{...booking(),start:day(25),end:day(25)}})]);
   const id=requests[0].booking.id;

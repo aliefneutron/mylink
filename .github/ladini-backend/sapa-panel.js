@@ -27,10 +27,10 @@
     activate('sapa-list-count').textContent=sapaConnected?items.length+' pemesanan · Ruang Lingkar Barat · Seharian'+(items.length>10?' · Gulir tabel untuk melihat data lainnya.':''):'';
     const rows=items.map(item=>{
       const tr=element('tr');
-      for(const value of [item.start===item.end?item.start:item.start+' – '+item.end,item.person,item.department,item.activity])tr.append(element('td',value));
+      for(const value of [item.start===item.end?item.start:item.start+' – '+item.end,item.startTime||'–',item.endTime||'–',item.person,item.department,item.activity])tr.append(element('td',value));
       return tr;
     });
-    if(!rows.length){const tr=element('tr'),td=element('td',sapaConnected?'Belum ada pemesanan yang sesuai filter.':'Daftar tersedia setelah spreadsheet tersambung.');td.colSpan=4;tr.append(td);rows.push(tr);}
+    if(!rows.length){const tr=element('tr'),td=element('td',sapaConnected?'Belum ada pemesanan yang sesuai filter.':'Daftar tersedia setelah spreadsheet tersambung.');td.colSpan=6;tr.append(td);rows.push(tr);}
     activate('sapa-bookings').replaceChildren(...rows);
     sapaTableWrap.scrollTop=0;
     requestAnimationFrame(sizeSapaList);

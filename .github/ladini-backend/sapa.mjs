@@ -70,8 +70,12 @@ export async function sapaRoute(request,env,{account,ApiError}) {
   const config=await connection(env);
   if(pathname==='/api/sapa'&&request.method==='GET') {
     if(!config)return {connected:false,room,departments,bookings:[]};
-    const data=await bridge(config,{action:'list'},ApiError);
-    return {connected:true,room,departments,bookings:data.bookings};
+    // Read times from the existing deployed bridge without requiring an Apps Script update.
+    // Explicitly select public fields so notes, invitations and attachments stay private.
+    const data=await bridge(config,{action:'adminList'},ApiError);
+    const fields=['id','person','activity','department','start','end','created','status','room','startTime','endTime'];
+    const bookings=data.bookings.filter(item=>item.status!=='dibatalkan').map(item=>Object.fromEntries(fields.map(field=>[field,item[field]||''])));
+    return {connected:true,room,departments,bookings};
   }
   if(!config)throw new ApiError(503,'Pemesanan belum dibuka. Admin perlu menyambungkan spreadsheet terlebih dahulu.');
   if(pathname==='/api/sapa/availability'&&request.method==='GET') {
