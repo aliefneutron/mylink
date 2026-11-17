@@ -145,7 +145,7 @@ body { background-color: var(--site-background,#0d1228); background-size: cover;
 .sapa-table { width:100%; border-collapse:collapse; font-size:13px; text-align:left; }
 .sapa-table th,.sapa-table td { padding:13px 10px; border-bottom:1px solid var(--stroke); vertical-align:top; min-width:125px; overflow-wrap:anywhere; }
 .sapa-table th { color:var(--muted); font-weight:600; }
-.sapa-table th:nth-child(2),.sapa-table th:nth-child(3),.sapa-table td:nth-child(2),.sapa-table td:nth-child(3) { min-width:90px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sapa-table th:nth-child(2),.sapa-table td:nth-child(2) { min-width:125px; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .sapa-table thead th { position:sticky; top:0; z-index:1; background:#17243e; }
 :root[data-theme="light"] .sapa-table thead th { background:#f4faf6; }
 .sapa-setup { padding:15px; margin-bottom:20px; border:1px solid var(--stroke); border-radius:12px; font-size:13px; line-height:1.8; }
