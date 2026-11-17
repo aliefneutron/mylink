@@ -139,6 +139,36 @@ async function listContent(db) {
 async function listOverrides(db) {
   return (await db.prepare('SELECT id, title, url, hidden, body FROM link_overrides').all()).results;
 }
+async function readSettings(db) {
+  const row = await db.prepare('SELECT value,version FROM site_settings WHERE id=1').first();
+  return row ? { value: JSON.parse(row.value), version:row.version } : { value:{}, version:0 };
+}
+
+function validateSettings(input) {
+  const title = text(input.title,80);
+  const subtitle = text(input.subtitle,160);
+  if (!title || !['dark','light','auto'].includes(input.theme)) throw new ApiError(400,'Isi judul dan tema yang valid.');
+  for(const color of [input.accent,input.background]) {
+    if(!/^#[a-f0-9]{6}$/i.test(color||'')) throw new ApiError(400,'Warna tidak valid.');
+  }
+  for(const id of [input.logoId,input.backgroundId]) {
+    if(id && !uuid.test(id)) throw new ApiError(400,'Gambar tidak valid.');
+  }
+  if(!Array.isArray(input.tabs) || input.tabs.length>20) throw new ApiError(400,'Maksimal 20 tab tambahan.');
+  const ids=new Set();
+  const tabs=input.tabs.map(tab=>{
+    if(!uuid.test(tab.id||'') || ids.has(tab.id)) throw new ApiError(400,'ID tab tidak valid.');
+    ids.add(tab.id);
+    const label=text(tab.label,60), body=text(tab.body,5000);
+    if(!label) throw new ApiError(400,'Nama tab wajib diisi.');
+    const page=tab.type==='page';
+    let url = page ? '#halaman/'+tab.id : text(tab.url,2048);
+    if(!page && !/^#[A-Za-z0-9][A-Za-z0-9/?=%_.&-]*$/.test(url)) url=safeURL(url).href;
+    return {id:tab.id,label,type:page?'page':'link',url,body};
+  });
+  return {title,subtitle,theme:input.theme,accent:input.accent,background:input.background,
+    logoId:input.logoId||'',backgroundId:input.backgroundId||'',tabs};
+}
 
 async function login(request, env, now) {
   const db = env.DB;
@@ -257,7 +287,7 @@ async function route(request, env, origin) {
   const now = Date.now();
   const ok = (data, status = 200) => respond(data, status, origin);
   if (method === 'OPTIONS') return ok(null, 204);
-  if (method === 'GET' && pathname === '/api/content') return ok({ items: await listContent(db), overrides: await listOverrides(db) });
+  if (method === 'GET' && pathname === '/api/content') return ok({ items: await listContent(db), overrides: await listOverrides(db), settings:await readSettings(db) });
   if (method === 'GET' && pathname === '/api/stats') return ok(await getStats(db, now, new URL(request.url).searchParams.get('tz') || 'Asia/Jakarta'));
   if (method === 'GET' && pathname === '/api/images') {
     return ok({ images: (await db.prepare('SELECT id, caption, created_at FROM images ORDER BY created_at DESC, id').all()).results });
@@ -283,10 +313,25 @@ async function route(request, env, origin) {
     account,
     items: await listContent(db),
     overrides: await listOverrides(db),
+    settings:await readSettings(db),
     images: (await db.prepare('SELECT id, caption, created_at FROM images ORDER BY created_at DESC, id').all()).results,
     accounts: account.role === 'owner'
       ? (await db.prepare('SELECT id, name, role, disabled FROM accounts ORDER BY created_at').all()).results : []
   });
+  if(method==='PATCH' && pathname==='/api/admin/settings'){
+    if(account.role!=='owner') throw new ApiError(403,'Hanya pemilik dapat mengatur tampilan dan tab.');
+    const input=await json(request,400000);
+    const value=validateSettings(input.value||{});
+    for(const id of [value.logoId,value.backgroundId].filter(Boolean)) {
+      if(!await db.prepare('SELECT id FROM images WHERE id=?').bind(id).first()) throw new ApiError(400,'Gambar yang dipilih sudah dihapus. Pilih gambar lain.');
+    }
+    if(!Number.isInteger(input.version)||input.version<0) throw new ApiError(400,'Versi pengaturan tidak valid.');
+    const saved=await db.prepare(`INSERT INTO site_settings VALUES (1,?,1)
+      ON CONFLICT(id) DO UPDATE SET value=excluded.value,version=site_settings.version+1 WHERE site_settings.version=?`)
+      .bind(JSON.stringify(value),input.version).run();
+    if(!saved.meta.changes) throw new ApiError(409,'Pengaturan telah berubah di sesi lain. Buka ulang Admin lalu coba lagi.');
+    return ok(await readSettings(db));
+  }
   const overrideId = pathname.match(/^\/api\/admin\/overrides\/([a-f0-9]{20})$/)?.[1];
   if (overrideId && method === 'PATCH') {
     const input = await json(request, 30000);
@@ -340,6 +385,10 @@ async function route(request, env, origin) {
   }
   const deletedImage = pathname.match(/^\/api\/admin\/images\/([a-f0-9-]+)$/)?.[1];
   if (method === 'DELETE' && uuid.test(deletedImage || '')) {
+    const settings=await readSettings(db);
+    if([settings.value.logoId,settings.value.backgroundId].includes(deletedImage)) {
+      throw new ApiError(409,'Gambar sedang dipakai sebagai logo atau background. Ganti melalui Tampilan sebelum menghapusnya.');
+    }
     await db.prepare('DELETE FROM images WHERE id = ?').bind(deletedImage).run();
     return ok(null, 204);
   }

@@ -38,3 +38,5 @@ Menu Galeri menerima JPG, PNG, dan WebP maksimal 1 MB per gambar, dengan kapasit
 Secret Worker `CODE_PEPPER` digunakan untuk melindungi kode pilihan. Buat sekali dengan nilai acak panjang melalui `wrangler secret put CODE_PEPPER`. Simpan secret ini tetap sama saat deploy berikutnya agar kode pilihan yang sudah dibuat tetap berlaku. Kode acak pemilik dari versi sebelumnya tetap didukung.
 
 Jam, tanggal, dan zona waktu diambil dari perangkat pengunjung. Statistik hari dan bulan mengikuti zona tersebut. Riwayat yang tercatat sebelum migrasi waktu memakai tanggal pencatatan awalnya.
+
+Pemilik juga memiliki menu Tampilan untuk mengatur nama aplikasi, keterangan, logo/ikon, gambar background, warna aksen dan background, serta tema gelap, terang atau otomatis mengikuti perangkat. Gambar dipilih dari Galeri. Tab tambahan dapat berupa tautan HTTPS/hash internal atau halaman baru dengan teks maksimal 5.000 karakter. Tab dapat diedit, dihapus dan diurutkan melalui tombol Naik. Versi pengaturan mencegah perubahan lama menimpa pengaturan yang baru disimpan di sesi lain.

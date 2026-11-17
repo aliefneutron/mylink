@@ -63,6 +63,37 @@
 .admin-metrics small { display: block; color: var(--muted); font-size: 12px; }
 .admin-metrics strong { display: block; margin-top: 4px; font: 700 30px var(--heading); color: var(--green); }
 .admin-tabs { display: flex; gap: 5px; padding: 5px; border: 1px solid var(--stroke); border-radius: 13px; background: #0d182a; overflow-x: auto; }
+.admin-tabs-heading { margin-top: 28px; }
+.custom-tabs { display: flex; flex-wrap: nowrap; gap: 7px; padding-block: 0 10px; overflow-x: auto; }
+.custom-tabs a { flex: 0 0 auto; padding: 6px 14px; border: 1px solid var(--stroke); border-radius: 20px; font-size: 13px; color: var(--muted); }
+.custom-tabs a:hover,.custom-tabs a[aria-current] { color: var(--green); background: #79edc515; }
+.custom-page-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.top .nav-group ul { max-height:calc(100vh - var(--header-height,110px) - 16px); max-height:calc(100dvh - var(--header-height,110px) - 16px); }
+body { background-color: var(--site-background,#0d1228); background-size: cover; background-attachment: fixed; }
+:root[data-theme="light"] { color-scheme: light; --ink:#17392f; --muted:#4e6b60; --stroke:#215f4230; --glass:#ffffffbd; }
+:root[data-theme="light"] body { background-color:var(--site-background,#f2f7f4); background-image:none; }
+:root[data-theme="light"] .header { background:#f5fff7e8; }
+:root[data-theme="light"] .glass { background:linear-gradient(135deg,#fffffff0,#e7f2edc7); box-shadow:inset 0 1px 0 white,0 9px 28px #1a493309; }
+:root[data-theme="light"] .profile-hero { background:linear-gradient(125deg,#f6fff9,#d9ede4); }
+:root[data-theme="light"] .profile-hero h1 { color:var(--ink); }
+:root[data-theme="light"] .hero h1 { color:var(--ink); }
+:root[data-theme="light"] .hero h1 em,:root[data-theme="light"] .eyebrow { color:var(--green); }
+:root[data-theme="light"] .hero .intro { color:var(--muted); }
+:root[data-theme="light"] .button.secondary { color:var(--ink); background:#ffffffa6; border-color:#39866460; }
+:root[data-theme="light"] .service { background:#ffffffb8; }
+:root[data-theme="light"] .nav-group ul { background:#f8fffb; }
+:root[data-theme="light"] .content-card p,:root[data-theme="light"] .content-card li,:root[data-theme="light"] .source-card,:root[data-theme="light"] .duty ol { color:#254b3d; }
+:root[data-theme="light"] .footer { background:#e0eee6; color:var(--ink); }
+:root[data-theme="light"] .admin-dialog,:root[data-theme="light"] dialog { background:#f3fbf6; color:var(--ink); }
+:root[data-theme="light"] .admin-login-mode { background:linear-gradient(140deg,#fffffff5,#deefe7f5); }
+:root[data-theme="light"] .admin-tabs,:root[data-theme="light"] .admin-dialog input,:root[data-theme="light"] .admin-dialog select,:root[data-theme="light"] .admin-dialog textarea { background:#fff; color:var(--ink); }
+:root[data-theme="light"] .admin-fields,:root[data-theme="light"] .admin-metrics > div { background:#e8f3ed; }
+:root[data-theme="light"] .admin-tabs button[aria-current] { color:#09583d; background:#bee8d5; }
+:root[data-theme="light"] .person-card { background:#e8f2ec; }
+:root[data-theme="light"] .visitor-widget dl > div { background:#f5fdf8; }
+:root[data-theme="light"] .gallery-controls button,:root[data-theme="light"] .icon-button { background:#fafffc; }
+:root[data-theme="light"] .video-label { color:var(--ink); }
+:root[data-theme="light"] .admin-code-field #admin-code { background:#f8fffb; color:var(--ink); }
 .admin-tabs button { flex: 1; padding: 11px 15px; min-height: 44px; border: 0; border-radius: 9px; white-space: nowrap; color: var(--muted); background: transparent; font-weight: 650; }
 .admin-tabs button[aria-current] { color: #baffdf; background: #39796340; box-shadow: inset 0 0 0 1px #79edc540; }
 .admin-section { border: 0; margin-top: 25px; padding: 0; }

@@ -23,6 +23,23 @@
   let currentAccount;
   let currentItems = [];
   let activeTab = 'content';
+  let siteSettings = {value:{},version:0};
+  let editingTab = '';
+  const appearance = activate('admin-appearance');
+  const tabForm = activate('admin-tab-form');
+  const originalLogo = [...document.querySelectorAll('.brand-mark img,.logo-glass img')].map(node=>({node,src:node.src}));
+  const originalBrandTitle = document.querySelector('.brand strong').textContent;
+  const originalBrandSubtitle = document.querySelector('.brand small').textContent;
+  const defaultSettings = {title:originalBrandTitle,subtitle:originalBrandSubtitle,theme:'dark',accent:'#79edc5',background:'#0d1228',logoId:'',backgroundId:'',tabs:[]};
+  const deviceTheme = matchMedia('(prefers-color-scheme: light)');
+  const customPages = [];
+  const customNav = element('nav','','custom-tabs shell');
+  customNav.setAttribute('aria-label','Tab tambahan');
+  document.querySelector('.header').append(customNav);
+  const headerObserver = new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--header-height',document.querySelector('.header').getBoundingClientRect().height+'px');
+  });
+  headerObserver.observe(document.querySelector('.header'));
   let previewImageURL;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const builtInItems = JSON.parse(activate('ladini-content-index')?.textContent || '[]');
@@ -81,7 +98,7 @@
   }
 
   function showTab(tab) {
-    if (tab === 'accounts' && currentAccount?.role !== 'owner') tab = 'content';
+    if (['accounts','appearance'].includes(tab) && currentAccount?.role !== 'owner') tab = 'content';
     activeTab = tab;
     document.querySelectorAll('[data-admin-section]').forEach((section) => {
       section.hidden = section.dataset.adminSection !== tab;
@@ -178,7 +195,7 @@
   }
 
   async function refreshDashboard() {
-    const { account, items, accounts, images, overrides = [] } = await request('admin', { auth: true });
+    const { account, items, accounts, images, overrides = [], settings } = await request('admin', { auth: true });
     currentAccount = account;
     const changes = new Map(overrides.map((item)=>[item.id,item]));
     currentItems = [
@@ -191,6 +208,9 @@
     dialog.setAttribute('aria-labelledby', 'admin-title');
     activate('admin-account').textContent = account.name + ' · ' + (account.role === 'owner' ? 'Pemilik' : 'Editor');
     activate('admin-accounts-tab').hidden = account.role !== 'owner';
+    activate('admin-appearance-tab').hidden = account.role !== 'owner';
+    siteSettings = {value:{...defaultSettings,...(settings?.value||{})},version:settings?.version||0};
+    fillAppearance(images);
     activate('admin-count-links').textContent = currentItems.filter(item=>!item.hidden).length;
     activate('admin-count-images').textContent = images.length;
     showTab(activeTab);
@@ -454,9 +474,155 @@
     document.querySelector('.video-grid').append(article);
   }
 
+  function applyAppearance() {
+    const config = {...defaultSettings,...siteSettings.value};
+    const light = config.theme==='auto' ? deviceTheme.matches : config.theme==='light';
+    document.documentElement.dataset.theme=light?'light':'dark';
+    document.documentElement.style.setProperty('--green',light&&config.accent===defaultSettings.accent?'#086246':config.accent);
+    document.documentElement.style.setProperty('--site-background',light&&config.background===defaultSettings.background?'#f2f7f4':config.background);
+    document.body.style.backgroundImage=config.backgroundId ? 'linear-gradient('+(light?'#f6fff3dc,#f6fff3dc':'#0d1228d9,#0d1228d9')+'),url("'+root+'/api/images/'+config.backgroundId+'")' : '';
+    document.querySelector('.brand strong').textContent=config.title;
+    document.querySelector('.brand small').textContent=config.subtitle;
+    document.querySelector('.footer strong').textContent=config.title;
+    for(const logo of originalLogo) {
+      logo.node.src=config.logoId?root+'/api/images/'+config.logoId:logo.src;
+      if(logo.node.closest('.brand-mark')) {
+        logo.node.style.width=config.logoId?'100%':'';
+        logo.node.style.marginLeft=config.logoId?'0':'';
+        logo.node.style.objectFit=config.logoId?'contain':'';
+      }
+    }
+    let favicon=document.querySelector('link[rel="icon"]');
+    if(!favicon){favicon=element('link');favicon.rel='icon';document.head.append(favicon);}
+    favicon.href=config.logoId?root+'/api/images/'+config.logoId:originalLogo[0].src;
+    for(const page of customPages.splice(0)) {
+      directoryPages.delete(page.dataset.directoryPage);
+      const index=visiblePages.indexOf(page);
+      if(index>=0)visiblePages.splice(index,1);
+      page.remove();
+    }
+    customNav.replaceChildren();
+    for(const tab of config.tabs){
+      const anchor=element('a',tab.label);
+      anchor.href=tab.url;
+      if(!tab.url.startsWith('#')){anchor.target='_blank';anchor.rel='noopener noreferrer';}
+      customNav.append(anchor);
+      if(tab.type!=='page')continue;
+      const route='halaman/'+tab.id;
+      const page=element('div');
+      page.dataset.directoryPage=route;
+      page.dataset.pageTitle=tab.label;
+      page.hidden=true;
+      const hero=element('section','','profile-hero glass');
+      const heading=element('h1',tab.label);
+      heading.tabIndex=-1;
+      hero.append(heading);
+      const content=element('div',tab.body||'','glass content-card block custom-page-text');
+      page.append(hero,content);
+      document.querySelector('main').append(page);
+      directoryPages.set(route,page);
+      visiblePages.push(page);
+      customPages.push(page);
+    }
+    customNav.hidden=!config.tabs.length;
+    renderPage();
+    applyApplicationTitle();
+  }
+  function applyApplicationTitle() {
+    const config={...defaultSettings,...siteSettings.value};
+    const route=location.hash.slice(1).split('?',1)[0];
+    const pageTitle=route==='profil'?'Profil':directoryPages.get(route)?.dataset.pageTitle;
+    document.title=pageTitle?pageTitle+' | '+config.title:config.title+' | '+config.subtitle;
+    customNav.querySelectorAll('a').forEach(anchor=>{
+      if(anchor.hash&&anchor.hash===location.hash)anchor.setAttribute('aria-current','page');
+      else anchor.removeAttribute('aria-current');
+    });
+  }
+  deviceTheme.addEventListener('change',()=>{if(siteSettings.value.theme==='auto')applyAppearance();});
+  window.addEventListener('hashchange',applyApplicationTitle);
+
+  function fillAppearance(images) {
+    const config={...defaultSettings,...siteSettings.value};
+    for(const field of ['logoId','backgroundId']){
+      const select=appearance.elements[field];
+      function option(label,value) { const node=element('option',label);node.value=value;return node; }
+      select.replaceChildren(option(field==='logoId'?'Logo bawaan LADINI':'Tanpa gambar background',''));
+      for(const image of images)select.add(option(image.caption,image.id));
+      if(config[field]&&!images.some(image=>image.id===config[field]))select.add(option('Gambar yang sebelumnya dipilih',config[field]));
+    }
+    for(const field of ['title','subtitle','theme','accent','background','logoId','backgroundId'])appearance.elements[field].value=config[field];
+    activate('admin-tab-list').replaceChildren(...config.tabs.map((tab,index)=>{
+      const rowNode=row(tab.label,tab.type==='page'?'Halaman baru':tab.url,
+        action('Edit',async()=>{
+          editingTab=tab.id;
+          for(const field of ['label','type','url','body'])tabForm.elements[field].value=tab[field]||'';
+          updateTabFields();
+          activate('admin-tab-save').textContent='Simpan tab';
+          activate('admin-tab-cancel').hidden=false;
+          tabForm.elements.label.focus();
+        }),
+        action('Hapus',async()=>{
+          if(!window.confirm('Hapus tab “'+tab.label+'”?'))return;
+          await saveAppearance({...config,tabs:config.tabs.filter(item=>item.id!==tab.id)});
+          resetTabForm();
+          notice('Tab dihapus.');
+        })
+      );
+      if(index>0)rowNode.append(action('Naik',async()=>{
+        const tabs=[...config.tabs];
+        [tabs[index-1],tabs[index]]=[tabs[index],tabs[index-1]];
+        await saveAppearance({...config,tabs});
+      }));
+      return rowNode;
+    }));
+  }
+  async function saveAppearance(value) {
+    siteSettings=await request('admin/settings',{method:'PATCH',auth:true,body:{value,version:siteSettings.version}});
+    await Promise.all([refreshContent(),refreshDashboard()]);
+  }
+  appearance.addEventListener('submit',event=>{
+    event.preventDefault();
+    const values=Object.fromEntries(new FormData(appearance));
+    void run(event.submitter,async()=>{
+      await saveAppearance({...defaultSettings,...siteSettings.value,...values});
+      notice('Tampilan aplikasi sudah diperbarui.');
+    });
+  });
+  function updateTabFields() {
+    const isPage=tabForm.elements.type.value==='page';
+    activate('admin-tab-url').hidden=isPage;
+    activate('admin-tab-body').hidden=!isPage;
+    tabForm.elements.url.required=!isPage;
+  }
+  function resetTabForm() {
+    editingTab='';
+    tabForm.reset();
+    updateTabFields();
+    activate('admin-tab-save').textContent='Tambah tab';
+    activate('admin-tab-cancel').hidden=true;
+  }
+  tabForm.elements.type.addEventListener('change',updateTabFields);
+  activate('admin-tab-cancel').addEventListener('click',resetTabForm);
+  tabForm.addEventListener('submit',event=>{
+    event.preventDefault();
+    const values=Object.fromEntries(new FormData(tabForm));
+    void run(event.submitter,async()=>{
+      const config={...defaultSettings,...siteSettings.value};
+      const tab={...values,id:editingTab||crypto.randomUUID()};
+      const tabs=config.tabs.filter(item=>item.id!==tab.id);
+      const at=config.tabs.findIndex(item=>item.id===tab.id);
+      if(at<0)tabs.push(tab);else tabs.splice(at,0,tab);
+      await saveAppearance({...config,tabs});
+      resetTabForm();
+      notice('Tab navigasi tersimpan.');
+    });
+  });
+
   async function refreshContent() {
-    const { items, overrides } = await request('content');
+    const { items, overrides, settings } = await request('content');
+    siteSettings={value:{...defaultSettings,...(settings?.value||{})},version:settings?.version||0};
     applyOverrides(overrides);
+    applyAppearance();
     for (let i = entries.length - 1; i >= 0; i--) {
       if (entries[i].dataset.managed) entries.splice(i, 1);
     }

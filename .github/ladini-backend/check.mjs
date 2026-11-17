@@ -75,6 +75,16 @@ try {
   })).code;
   const editor = await request('login', 200, { method: 'POST', body: { code: editorCode } });
   assert.equal(editor.account.role, 'editor');
+  const settings = {title:'Portal Uji LADINI',subtitle:'Layanan terpadu',theme:'light',accent:'#086246',background:'#f2f7f4',
+    logoId:'',backgroundId:'',tabs:[{id:crypto.randomUUID(),label:'Panduan',type:'page',body:'Panduan layanan',url:''}]};
+  await request('admin/settings',403,{method:'PATCH',session:editor.session,body:{version:0,value:settings}});
+  await request('admin/settings',400,{method:'PATCH',session:owner,body:{version:0,value:{...settings,accent:'bad'}}});
+  const stored = await request('admin/settings',200,{method:'PATCH',session:owner,body:{version:0,value:settings}});
+  assert.equal(stored.version,1);
+  assert.equal(stored.value.tabs[0].url,'#halaman/'+settings.tabs[0].id);
+  assert.equal((await request('content',200)).settings.value.title,settings.title);
+  await request('admin/settings',409,{method:'PATCH',session:owner,body:{version:0,value:settings}});
+  await request('admin/settings',200,{method:'PATCH',session:owner,body:{version:1,value:{...settings,theme:'dark'}}});
   await request('admin/accounts', 403, { method: 'POST', session: editor.session, body: { name: 'Dilarang' } });
 
   const video = { kind: 'video', title: 'Maklumat Pelayanan', url: 'https://youtube.com/shorts/WE-JFoLffeY' };

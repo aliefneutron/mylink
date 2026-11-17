@@ -35,6 +35,7 @@
       <button type="button" data-admin-tab="gallery">Galeri</button>
       <button type="button" data-admin-tab="accounts" id="admin-accounts-tab" hidden>Akun Editor</button>
       <button type="button" data-admin-tab="security">Kode Akses</button>
+      <button type="button" data-admin-tab="appearance" id="admin-appearance-tab" hidden>Tampilan</button>
     </nav>
     <section class="admin-section" aria-labelledby="admin-content-title" data-admin-section="content">
       <div class="admin-section-heading"><h3 id="admin-content-title">Kelola konten</h3><p>Atur layanan, video, informasi, serta tautan internal dan eksternal LADINI.</p></div>
@@ -91,6 +92,28 @@
         <label>Ulangi kode baru<input name="confirmCode" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
         <button class="button profile-button" type="submit">Simpan kode akses</button>
       </form>
+    </section>
+    <section class="admin-section" aria-labelledby="admin-appearance-title" data-admin-section="appearance" hidden>
+      <div class="admin-section-heading"><h3 id="admin-appearance-title">Tampilan dan navigasi</h3><p>Pengaturan ini diterapkan untuk seluruh pengunjung. Unggah ikon atau background melalui Galeri, lalu pilih gambarnya di sini.</p></div>
+      <form id="admin-appearance" class="admin-fields">
+        <label>Judul aplikasi<input name="title" maxlength="80" required></label>
+        <label>Keterangan aplikasi<input name="subtitle" maxlength="160"></label>
+        <label>Tema<select name="theme"><option value="dark">Gelap</option><option value="light">Terang</option><option value="auto">Ikuti perangkat pengunjung</option></select></label>
+        <label>Warna aksen<input name="accent" type="color"></label>
+        <label>Warna background<input name="background" type="color"></label>
+        <label>Ikon dan logo aplikasi<select name="logoId"><option value="">Logo bawaan LADINI</option></select></label>
+        <label class="admin-wide">Gambar background<select name="backgroundId"><option value="">Tanpa gambar background</option></select></label>
+        <button class="button profile-button" type="submit">Simpan tampilan</button>
+      </form>
+      <div class="admin-section-heading admin-tabs-heading"><h3>Tab navigasi tambahan</h3><p>Tambahkan halaman berisi teks atau tautan menuju halaman dan layanan lain.</p></div>
+      <form id="admin-tab-form" class="admin-fields">
+        <label>Nama tab<input name="label" maxlength="60" required></label>
+        <label>Tujuan<select name="type"><option value="page">Halaman baru</option><option value="link">Tautan</option></select></label>
+        <label class="admin-wide" id="admin-tab-url" hidden>Alamat tujuan<input name="url" placeholder="https:// atau #layanan"></label>
+        <label class="admin-wide" id="admin-tab-body">Isi halaman<textarea name="body" rows="5" maxlength="5000" placeholder="Tulis informasi untuk halaman baru"></textarea></label>
+        <div class="admin-line admin-wide"><button class="button profile-button" type="submit" id="admin-tab-save">Tambah tab</button><button class="button profile-button" type="button" id="admin-tab-cancel" hidden>Batal</button></div>
+      </form>
+      <ul id="admin-tab-list" class="admin-list"></ul>
     </section>
   </div>
 </dialog>

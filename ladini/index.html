@@ -404,6 +404,37 @@ dialog input { background: #0d172d; border-color: var(--stroke); }
 .admin-metrics small { display: block; color: var(--muted); font-size: 12px; }
 .admin-metrics strong { display: block; margin-top: 4px; font: 700 30px var(--heading); color: var(--green); }
 .admin-tabs { display: flex; gap: 5px; padding: 5px; border: 1px solid var(--stroke); border-radius: 13px; background: #0d182a; overflow-x: auto; }
+.admin-tabs-heading { margin-top: 28px; }
+.custom-tabs { display: flex; flex-wrap: nowrap; gap: 7px; padding-block: 0 10px; overflow-x: auto; }
+.custom-tabs a { flex: 0 0 auto; padding: 6px 14px; border: 1px solid var(--stroke); border-radius: 20px; font-size: 13px; color: var(--muted); }
+.custom-tabs a:hover,.custom-tabs a[aria-current] { color: var(--green); background: #79edc515; }
+.custom-page-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.top .nav-group ul { max-height:calc(100vh - var(--header-height,110px) - 16px); max-height:calc(100dvh - var(--header-height,110px) - 16px); }
+body { background-color: var(--site-background,#0d1228); background-size: cover; background-attachment: fixed; }
+:root[data-theme="light"] { color-scheme: light; --ink:#17392f; --muted:#4e6b60; --stroke:#215f4230; --glass:#ffffffbd; }
+:root[data-theme="light"] body { background-color:var(--site-background,#f2f7f4); background-image:none; }
+:root[data-theme="light"] .header { background:#f5fff7e8; }
+:root[data-theme="light"] .glass { background:linear-gradient(135deg,#fffffff0,#e7f2edc7); box-shadow:inset 0 1px 0 white,0 9px 28px #1a493309; }
+:root[data-theme="light"] .profile-hero { background:linear-gradient(125deg,#f6fff9,#d9ede4); }
+:root[data-theme="light"] .profile-hero h1 { color:var(--ink); }
+:root[data-theme="light"] .hero h1 { color:var(--ink); }
+:root[data-theme="light"] .hero h1 em,:root[data-theme="light"] .eyebrow { color:var(--green); }
+:root[data-theme="light"] .hero .intro { color:var(--muted); }
+:root[data-theme="light"] .button.secondary { color:var(--ink); background:#ffffffa6; border-color:#39866460; }
+:root[data-theme="light"] .service { background:#ffffffb8; }
+:root[data-theme="light"] .nav-group ul { background:#f8fffb; }
+:root[data-theme="light"] .content-card p,:root[data-theme="light"] .content-card li,:root[data-theme="light"] .source-card,:root[data-theme="light"] .duty ol { color:#254b3d; }
+:root[data-theme="light"] .footer { background:#e0eee6; color:var(--ink); }
+:root[data-theme="light"] .admin-dialog,:root[data-theme="light"] dialog { background:#f3fbf6; color:var(--ink); }
+:root[data-theme="light"] .admin-login-mode { background:linear-gradient(140deg,#fffffff5,#deefe7f5); }
+:root[data-theme="light"] .admin-tabs,:root[data-theme="light"] .admin-dialog input,:root[data-theme="light"] .admin-dialog select,:root[data-theme="light"] .admin-dialog textarea { background:#fff; color:var(--ink); }
+:root[data-theme="light"] .admin-fields,:root[data-theme="light"] .admin-metrics > div { background:#e8f3ed; }
+:root[data-theme="light"] .admin-tabs button[aria-current] { color:#09583d; background:#bee8d5; }
+:root[data-theme="light"] .person-card { background:#e8f2ec; }
+:root[data-theme="light"] .visitor-widget dl > div { background:#f5fdf8; }
+:root[data-theme="light"] .gallery-controls button,:root[data-theme="light"] .icon-button { background:#fafffc; }
+:root[data-theme="light"] .video-label { color:var(--ink); }
+:root[data-theme="light"] .admin-code-field #admin-code { background:#f8fffb; color:var(--ink); }
 .admin-tabs button { flex: 1; padding: 11px 15px; min-height: 44px; border: 0; border-radius: 9px; white-space: nowrap; color: var(--muted); background: transparent; font-weight: 650; }
 .admin-tabs button[aria-current] { color: #baffdf; background: #39796340; box-shadow: inset 0 0 0 1px #79edc540; }
 .admin-section { border: 0; margin-top: 25px; padding: 0; }
@@ -949,6 +980,7 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
       <button type="button" data-admin-tab="gallery">Galeri</button>
       <button type="button" data-admin-tab="accounts" id="admin-accounts-tab" hidden>Akun Editor</button>
       <button type="button" data-admin-tab="security">Kode Akses</button>
+      <button type="button" data-admin-tab="appearance" id="admin-appearance-tab" hidden>Tampilan</button>
     </nav>
     <section class="admin-section" aria-labelledby="admin-content-title" data-admin-section="content">
       <div class="admin-section-heading"><h3 id="admin-content-title">Kelola konten</h3><p>Atur layanan, video, informasi, serta tautan internal dan eksternal LADINI.</p></div>
@@ -1006,6 +1038,28 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
         <button class="button profile-button" type="submit">Simpan kode akses</button>
       </form>
     </section>
+    <section class="admin-section" aria-labelledby="admin-appearance-title" data-admin-section="appearance" hidden>
+      <div class="admin-section-heading"><h3 id="admin-appearance-title">Tampilan dan navigasi</h3><p>Pengaturan ini diterapkan untuk seluruh pengunjung. Unggah ikon atau background melalui Galeri, lalu pilih gambarnya di sini.</p></div>
+      <form id="admin-appearance" class="admin-fields">
+        <label>Judul aplikasi<input name="title" maxlength="80" required></label>
+        <label>Keterangan aplikasi<input name="subtitle" maxlength="160"></label>
+        <label>Tema<select name="theme"><option value="dark">Gelap</option><option value="light">Terang</option><option value="auto">Ikuti perangkat pengunjung</option></select></label>
+        <label>Warna aksen<input name="accent" type="color"></label>
+        <label>Warna background<input name="background" type="color"></label>
+        <label>Ikon dan logo aplikasi<select name="logoId"><option value="">Logo bawaan LADINI</option></select></label>
+        <label class="admin-wide">Gambar background<select name="backgroundId"><option value="">Tanpa gambar background</option></select></label>
+        <button class="button profile-button" type="submit">Simpan tampilan</button>
+      </form>
+      <div class="admin-section-heading admin-tabs-heading"><h3>Tab navigasi tambahan</h3><p>Tambahkan halaman berisi teks atau tautan menuju halaman dan layanan lain.</p></div>
+      <form id="admin-tab-form" class="admin-fields">
+        <label>Nama tab<input name="label" maxlength="60" required></label>
+        <label>Tujuan<select name="type"><option value="page">Halaman baru</option><option value="link">Tautan</option></select></label>
+        <label class="admin-wide" id="admin-tab-url" hidden>Alamat tujuan<input name="url" placeholder="https:// atau #layanan"></label>
+        <label class="admin-wide" id="admin-tab-body">Isi halaman<textarea name="body" rows="5" maxlength="5000" placeholder="Tulis informasi untuk halaman baru"></textarea></label>
+        <div class="admin-line admin-wide"><button class="button profile-button" type="submit" id="admin-tab-save">Tambah tab</button><button class="button profile-button" type="button" id="admin-tab-cancel" hidden>Batal</button></div>
+      </form>
+      <ul id="admin-tab-list" class="admin-list"></ul>
+    </section>
   </div>
 </dialog>
 <template id="visitor-widget-template">
@@ -1049,6 +1103,23 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
   let currentAccount;
   let currentItems = [];
   let activeTab = 'content';
+  let siteSettings = {value:{},version:0};
+  let editingTab = '';
+  const appearance = activate('admin-appearance');
+  const tabForm = activate('admin-tab-form');
+  const originalLogo = [...document.querySelectorAll('.brand-mark img,.logo-glass img')].map(node=>({node,src:node.src}));
+  const originalBrandTitle = document.querySelector('.brand strong').textContent;
+  const originalBrandSubtitle = document.querySelector('.brand small').textContent;
+  const defaultSettings = {title:originalBrandTitle,subtitle:originalBrandSubtitle,theme:'dark',accent:'#79edc5',background:'#0d1228',logoId:'',backgroundId:'',tabs:[]};
+  const deviceTheme = matchMedia('(prefers-color-scheme: light)');
+  const customPages = [];
+  const customNav = element('nav','','custom-tabs shell');
+  customNav.setAttribute('aria-label','Tab tambahan');
+  document.querySelector('.header').append(customNav);
+  const headerObserver = new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--header-height',document.querySelector('.header').getBoundingClientRect().height+'px');
+  });
+  headerObserver.observe(document.querySelector('.header'));
   let previewImageURL;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const builtInItems = JSON.parse(activate('ladini-content-index')?.textContent || '[]');
@@ -1107,7 +1178,7 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
   }
 
   function showTab(tab) {
-    if (tab === 'accounts' && currentAccount?.role !== 'owner') tab = 'content';
+    if (['accounts','appearance'].includes(tab) && currentAccount?.role !== 'owner') tab = 'content';
     activeTab = tab;
     document.querySelectorAll('[data-admin-section]').forEach((section) => {
       section.hidden = section.dataset.adminSection !== tab;
@@ -1204,7 +1275,7 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
   }
 
   async function refreshDashboard() {
-    const { account, items, accounts, images, overrides = [] } = await request('admin', { auth: true });
+    const { account, items, accounts, images, overrides = [], settings } = await request('admin', { auth: true });
     currentAccount = account;
     const changes = new Map(overrides.map((item)=>[item.id,item]));
     currentItems = [
@@ -1217,6 +1288,9 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
     dialog.setAttribute('aria-labelledby', 'admin-title');
     activate('admin-account').textContent = account.name + ' · ' + (account.role === 'owner' ? 'Pemilik' : 'Editor');
     activate('admin-accounts-tab').hidden = account.role !== 'owner';
+    activate('admin-appearance-tab').hidden = account.role !== 'owner';
+    siteSettings = {value:{...defaultSettings,...(settings?.value||{})},version:settings?.version||0};
+    fillAppearance(images);
     activate('admin-count-links').textContent = currentItems.filter(item=>!item.hidden).length;
     activate('admin-count-images').textContent = images.length;
     showTab(activeTab);
@@ -1480,9 +1554,155 @@ document.querySelector('#next').addEventListener('click', () => showSlide(1));
     document.querySelector('.video-grid').append(article);
   }
 
+  function applyAppearance() {
+    const config = {...defaultSettings,...siteSettings.value};
+    const light = config.theme==='auto' ? deviceTheme.matches : config.theme==='light';
+    document.documentElement.dataset.theme=light?'light':'dark';
+    document.documentElement.style.setProperty('--green',light&&config.accent===defaultSettings.accent?'#086246':config.accent);
+    document.documentElement.style.setProperty('--site-background',light&&config.background===defaultSettings.background?'#f2f7f4':config.background);
+    document.body.style.backgroundImage=config.backgroundId ? 'linear-gradient('+(light?'#f6fff3dc,#f6fff3dc':'#0d1228d9,#0d1228d9')+'),url("'+root+'/api/images/'+config.backgroundId+'")' : '';
+    document.querySelector('.brand strong').textContent=config.title;
+    document.querySelector('.brand small').textContent=config.subtitle;
+    document.querySelector('.footer strong').textContent=config.title;
+    for(const logo of originalLogo) {
+      logo.node.src=config.logoId?root+'/api/images/'+config.logoId:logo.src;
+      if(logo.node.closest('.brand-mark')) {
+        logo.node.style.width=config.logoId?'100%':'';
+        logo.node.style.marginLeft=config.logoId?'0':'';
+        logo.node.style.objectFit=config.logoId?'contain':'';
+      }
+    }
+    let favicon=document.querySelector('link[rel="icon"]');
+    if(!favicon){favicon=element('link');favicon.rel='icon';document.head.append(favicon);}
+    favicon.href=config.logoId?root+'/api/images/'+config.logoId:originalLogo[0].src;
+    for(const page of customPages.splice(0)) {
+      directoryPages.delete(page.dataset.directoryPage);
+      const index=visiblePages.indexOf(page);
+      if(index>=0)visiblePages.splice(index,1);
+      page.remove();
+    }
+    customNav.replaceChildren();
+    for(const tab of config.tabs){
+      const anchor=element('a',tab.label);
+      anchor.href=tab.url;
+      if(!tab.url.startsWith('#')){anchor.target='_blank';anchor.rel='noopener noreferrer';}
+      customNav.append(anchor);
+      if(tab.type!=='page')continue;
+      const route='halaman/'+tab.id;
+      const page=element('div');
+      page.dataset.directoryPage=route;
+      page.dataset.pageTitle=tab.label;
+      page.hidden=true;
+      const hero=element('section','','profile-hero glass');
+      const heading=element('h1',tab.label);
+      heading.tabIndex=-1;
+      hero.append(heading);
+      const content=element('div',tab.body||'','glass content-card block custom-page-text');
+      page.append(hero,content);
+      document.querySelector('main').append(page);
+      directoryPages.set(route,page);
+      visiblePages.push(page);
+      customPages.push(page);
+    }
+    customNav.hidden=!config.tabs.length;
+    renderPage();
+    applyApplicationTitle();
+  }
+  function applyApplicationTitle() {
+    const config={...defaultSettings,...siteSettings.value};
+    const route=location.hash.slice(1).split('?',1)[0];
+    const pageTitle=route==='profil'?'Profil':directoryPages.get(route)?.dataset.pageTitle;
+    document.title=pageTitle?pageTitle+' | '+config.title:config.title+' | '+config.subtitle;
+    customNav.querySelectorAll('a').forEach(anchor=>{
+      if(anchor.hash&&anchor.hash===location.hash)anchor.setAttribute('aria-current','page');
+      else anchor.removeAttribute('aria-current');
+    });
+  }
+  deviceTheme.addEventListener('change',()=>{if(siteSettings.value.theme==='auto')applyAppearance();});
+  window.addEventListener('hashchange',applyApplicationTitle);
+
+  function fillAppearance(images) {
+    const config={...defaultSettings,...siteSettings.value};
+    for(const field of ['logoId','backgroundId']){
+      const select=appearance.elements[field];
+      function option(label,value) { const node=element('option',label);node.value=value;return node; }
+      select.replaceChildren(option(field==='logoId'?'Logo bawaan LADINI':'Tanpa gambar background',''));
+      for(const image of images)select.add(option(image.caption,image.id));
+      if(config[field]&&!images.some(image=>image.id===config[field]))select.add(option('Gambar yang sebelumnya dipilih',config[field]));
+    }
+    for(const field of ['title','subtitle','theme','accent','background','logoId','backgroundId'])appearance.elements[field].value=config[field];
+    activate('admin-tab-list').replaceChildren(...config.tabs.map((tab,index)=>{
+      const rowNode=row(tab.label,tab.type==='page'?'Halaman baru':tab.url,
+        action('Edit',async()=>{
+          editingTab=tab.id;
+          for(const field of ['label','type','url','body'])tabForm.elements[field].value=tab[field]||'';
+          updateTabFields();
+          activate('admin-tab-save').textContent='Simpan tab';
+          activate('admin-tab-cancel').hidden=false;
+          tabForm.elements.label.focus();
+        }),
+        action('Hapus',async()=>{
+          if(!window.confirm('Hapus tab “'+tab.label+'”?'))return;
+          await saveAppearance({...config,tabs:config.tabs.filter(item=>item.id!==tab.id)});
+          resetTabForm();
+          notice('Tab dihapus.');
+        })
+      );
+      if(index>0)rowNode.append(action('Naik',async()=>{
+        const tabs=[...config.tabs];
+        [tabs[index-1],tabs[index]]=[tabs[index],tabs[index-1]];
+        await saveAppearance({...config,tabs});
+      }));
+      return rowNode;
+    }));
+  }
+  async function saveAppearance(value) {
+    siteSettings=await request('admin/settings',{method:'PATCH',auth:true,body:{value,version:siteSettings.version}});
+    await Promise.all([refreshContent(),refreshDashboard()]);
+  }
+  appearance.addEventListener('submit',event=>{
+    event.preventDefault();
+    const values=Object.fromEntries(new FormData(appearance));
+    void run(event.submitter,async()=>{
+      await saveAppearance({...defaultSettings,...siteSettings.value,...values});
+      notice('Tampilan aplikasi sudah diperbarui.');
+    });
+  });
+  function updateTabFields() {
+    const isPage=tabForm.elements.type.value==='page';
+    activate('admin-tab-url').hidden=isPage;
+    activate('admin-tab-body').hidden=!isPage;
+    tabForm.elements.url.required=!isPage;
+  }
+  function resetTabForm() {
+    editingTab='';
+    tabForm.reset();
+    updateTabFields();
+    activate('admin-tab-save').textContent='Tambah tab';
+    activate('admin-tab-cancel').hidden=true;
+  }
+  tabForm.elements.type.addEventListener('change',updateTabFields);
+  activate('admin-tab-cancel').addEventListener('click',resetTabForm);
+  tabForm.addEventListener('submit',event=>{
+    event.preventDefault();
+    const values=Object.fromEntries(new FormData(tabForm));
+    void run(event.submitter,async()=>{
+      const config={...defaultSettings,...siteSettings.value};
+      const tab={...values,id:editingTab||crypto.randomUUID()};
+      const tabs=config.tabs.filter(item=>item.id!==tab.id);
+      const at=config.tabs.findIndex(item=>item.id===tab.id);
+      if(at<0)tabs.push(tab);else tabs.splice(at,0,tab);
+      await saveAppearance({...config,tabs});
+      resetTabForm();
+      notice('Tab navigasi tersimpan.');
+    });
+  });
+
   async function refreshContent() {
-    const { items, overrides } = await request('content');
+    const { items, overrides, settings } = await request('content');
+    siteSettings={value:{...defaultSettings,...(settings?.value||{})},version:settings?.version||0};
     applyOverrides(overrides);
+    applyAppearance();
     for (let i = entries.length - 1; i >= 0; i--) {
       if (entries[i].dataset.managed) entries.splice(i, 1);
     }
