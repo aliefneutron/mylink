@@ -8,5 +8,5 @@ SITE_ORIGIN = "https://aliefneutron.my.id"
 [[d1_databases]]
 binding = "DB"
 database_name = "ladini"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "14a68281-66ab-45ce-aef9-1756a8b4cb57"
 migrations_dir = "migrations"
