@@ -1,6 +1,6 @@
 .admin-entry { position: fixed; z-index: 2; bottom: 14px; right: 14px; border: 1px solid #79edc55c; padding: 8px 15px; border-radius: 24px; color: var(--green); background: #17243d; font-size: 13px; font-weight: 650; }
 .admin-entry:hover { background: #224258; }
-.admin-dialog { width: min(720px, calc(100% - 28px)); max-height: calc(100dvh - 30px); }
+.admin-dialog { width: min(1040px, calc(100% - 28px)); max-height: calc(100dvh - 30px); padding: clamp(18px, 3vw, 32px); background: radial-gradient(ellipse at 100% 0, #24566235, transparent 55%), #111d32; border-color: #8acecf38; border-radius: 22px; }
 .admin-dialog form { margin: 0; }
 .admin-dialog label { font-size: 13px; }
 .admin-dialog input, .admin-dialog select, .admin-dialog textarea { width: 100%; padding: 9px 11px; margin: 5px 0 10px; border: 1px solid var(--stroke); border-radius: 8px; background: #0d172d; color: var(--ink); font: inherit; }
@@ -55,6 +55,48 @@
 .managed-link small { display: block; color: var(--muted); }
 .managed-link:hover { color: var(--green); }
 .video-dialog video { display: block; width: 100%; max-height: 65dvh; background: #050713; border-radius: 12px; }
+.admin-welcome { margin: 8px 0 20px; padding-top: 14px; border-top: 1px solid var(--stroke); }
+.admin-eyebrow { margin: 0 0 5px; font-size: 10px; letter-spacing: .15em; color: var(--green); font-weight: 700; }
+.admin-welcome strong { font: 650 20px var(--heading); }
+.admin-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.admin-metrics > div { padding: 16px; border: 1px solid var(--stroke); border-radius: 14px; background: linear-gradient(130deg,#25435985,#15263c); }
+.admin-metrics small { display: block; color: var(--muted); font-size: 12px; }
+.admin-metrics strong { display: block; margin-top: 4px; font: 700 30px var(--heading); color: var(--green); }
+.admin-tabs { display: flex; gap: 5px; padding: 5px; border: 1px solid var(--stroke); border-radius: 13px; background: #0d182a; overflow-x: auto; }
+.admin-tabs button { flex: 1; padding: 11px 15px; min-height: 44px; border: 0; border-radius: 9px; white-space: nowrap; color: var(--muted); background: transparent; font-weight: 650; }
+.admin-tabs button[aria-current] { color: #baffdf; background: #39796340; box-shadow: inset 0 0 0 1px #79edc540; }
+.admin-section { border: 0; margin-top: 25px; padding: 0; }
+.admin-section-heading h3 { font: 650 24px var(--heading); letter-spacing: -.035em; margin-bottom: 5px; }
+.admin-section-heading p, .admin-form-hint { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+.admin-fields { border: 1px solid var(--stroke); border-radius: 15px; padding: 18px; background: #1b2c424f; }
+.admin-fields .button[type="submit"] { background: #87f0cb; color: #0a3028; border-color: transparent; justify-content: center; }
+.admin-content-filter { margin-top: 18px; max-width: 400px; }
+.admin-list li { padding: 14px 0; }
+.admin-list li > div strong { font-size: 14px; }
+.admin-list li > div small { font-size: 12px; margin-top: 3px; }
+.admin-list:empty::before, .admin-image-grid:empty::before { content: 'Belum ada gambar. Unggah gambar pertama Anda.'; color: var(--muted); font-size: 13px; padding-block: 14px; }
+.admin-upload-field { padding: 16px; border: 1px dashed #79edc56b; border-radius: 12px; background: #79edc509; }
+.admin-upload-field input[type=file] { margin-bottom: 0; background: transparent; border: 0; padding: 8px 0 0; }
+.admin-image-preview { max-width: 100%; max-height: 220px; object-fit: contain; margin-bottom: 14px; border-radius: 10px; }
+.admin-image-grid, .public-image-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin: 18px 0 0; padding: 0; list-style: none; }
+.admin-image-grid li { padding: 10px; border: 1px solid var(--stroke); border-radius: 12px; min-width: 0; }
+.admin-image-grid img, .public-image-grid img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 9px; }
+.admin-image-grid strong { display: block; padding: 10px 0; overflow-wrap: anywhere; font-size: 13px; }
+.admin-image-grid .button { min-height: 36px; font-size: 12px; }
+.public-image-grid figure { margin: 0; padding: 9px; overflow: hidden; }
+.public-image-grid figcaption { padding: 9px; font-size: 13px; overflow-wrap: anywhere; }
+.ladini-local-clock { width: min(1200px, calc(100% - 72px)); margin: 12px auto 0; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 5px; font-size: 12px; color: var(--muted); }
+.ladini-local-clock small { color: var(--green); font-size: 11px; }
+.visitor-widget .section-head { flex-wrap: wrap; }
+@media (max-width: 700px) {
+  .admin-metrics { gap: 7px; }
+  .admin-metrics > div { padding: 10px; }
+  .admin-metrics small { font-size: 10px; }
+  .admin-tabs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .admin-tabs button { padding: 9px 5px; font-size: 13px; }
+  .admin-image-grid, .public-image-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .ladini-local-clock { width: calc(100% - 28px); }
+}
 @media (max-width: 480px) {
   .admin-fields { grid-template-columns: 1fr; }
   .admin-login-mode { padding-inline: 17px; }

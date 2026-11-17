@@ -7,6 +7,9 @@ import worker from './worker.mjs';
 const db = new DatabaseSync(process.env.LADINI_DB || ':memory:');
 db.exec('PRAGMA foreign_keys = ON;');
 db.exec(readFileSync(new URL('migrations/0001_init.sql', import.meta.url), 'utf8'));
+db.exec(readFileSync(new URL('migrations/0002_gallery.sql', import.meta.url), 'utf8'));
+db.exec(readFileSync(new URL('migrations/0003_visit_time.sql', import.meta.url), 'utf8'));
+db.exec(readFileSync(new URL('migrations/0004_link_overrides.sql', import.meta.url), 'utf8'));
 
 function statement(query) {
   const prepared = db.prepare(query);
@@ -26,6 +29,7 @@ const bootstrap = process.env.LADINI_PREVIEW_CODE;
 if (!bootstrap || bootstrap.length < 24) throw new Error('Setel LADINI_PREVIEW_CODE minimal 24 karakter.');
 const env = {
   BOOTSTRAP_CODE: bootstrap,
+  CODE_PEPPER: 'local-preview-pepper-do-not-use-in-production',
   SITE_ORIGIN: origin,
   DB: {
     prepare: statement,

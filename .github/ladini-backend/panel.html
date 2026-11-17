@@ -8,10 +8,10 @@
     <div class="admin-login-mark" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 2a6.5 6.5 0 0 0-6.23 8.35L2 17.62V22h4.38L8 20.38V18h2.38l2.98-2.98A6.5 6.5 0 1 0 15.5 2Zm2 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
     </div>
-    <h2 id="admin-login-title">Verifikasi Lisensi Akses</h2>
+    <h2 id="admin-login-title">Masuk Admin LADINI</h2>
     <p class="admin-login-copy">Masukkan kode akses resmi untuk membuka panel Admin LADINI.</p>
     <div class="admin-code-field">
-      <input id="admin-code" name="code" type="password" autocomplete="current-password" aria-label="Kode akses" placeholder="KETIK KODE LISENSI..." maxlength="140" spellcheck="false" autocapitalize="none" required>
+      <input id="admin-code" name="code" type="password" autocomplete="current-password" aria-label="Kode akses" placeholder="Masukkan kode akses" maxlength="140" spellcheck="false" autocapitalize="none" required>
       <button type="button" id="admin-reveal-code" class="admin-reveal-code" aria-controls="admin-code" aria-pressed="false" aria-label="Tampilkan kode akses">
         <svg class="admin-eye" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         <svg class="admin-eye-closed" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M9.9 5.2A10.5 10.5 0 0 1 12 5c6.5 0 10 7 10 7a15 15 0 0 1-3 3.8M6.2 6.2C3.6 8.2 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.8-1.2"/></svg>
@@ -24,9 +24,20 @@
   </form>
   <p id="admin-message" class="admin-message" aria-live="polite"></p>
   <div id="admin-dashboard" hidden>
-    <div class="admin-line"><strong id="admin-account"></strong><button class="button profile-button" type="button" id="admin-logout">Keluar</button></div>
-    <section class="admin-section" aria-labelledby="admin-content-title">
-      <h3 id="admin-content-title">Kelola tautan</h3>
+    <div class="admin-line admin-welcome"><div><p class="admin-eyebrow">RUANG KELOLA</p><strong id="admin-account"></strong></div><button class="button profile-button" type="button" id="admin-logout">Keluar</button></div>
+    <div class="admin-metrics" aria-label="Ringkasan pengelolaan">
+      <div><small>Konten aktif</small><strong id="admin-count-links">0</strong></div>
+      <div><small>Gambar galeri</small><strong id="admin-count-images">0</strong></div>
+      <div><small>Pengunjung hari ini</small><strong id="admin-count-visitors">–</strong></div>
+    </div>
+    <nav class="admin-tabs" aria-label="Menu pengelolaan">
+      <button type="button" data-admin-tab="content" aria-current="page">Konten</button>
+      <button type="button" data-admin-tab="gallery">Galeri</button>
+      <button type="button" data-admin-tab="accounts" id="admin-accounts-tab" hidden>Akun Editor</button>
+      <button type="button" data-admin-tab="security">Kode Akses</button>
+    </nav>
+    <section class="admin-section" aria-labelledby="admin-content-title" data-admin-section="content">
+      <div class="admin-section-heading"><h3 id="admin-content-title">Kelola konten</h3><p>Atur layanan, video, informasi, serta tautan internal dan eksternal LADINI.</p></div>
       <form id="admin-item" class="admin-fields">
         <label>Kategori
           <select name="kind">
@@ -38,18 +49,31 @@
           </select>
         </label>
         <label>Judul<input name="title" type="text" maxlength="160" required></label>
-        <label class="admin-wide">Alamat tautan<input name="url" type="url" maxlength="2048" placeholder="https://" required></label>
+        <label class="admin-wide">Alamat tautan<input name="url" type="text" inputmode="url" maxlength="2048" placeholder="https:// atau #layanan/nama-halaman" required></label>
         <label class="admin-wide">Deskripsi (opsional)<textarea name="description" maxlength="700" rows="2"></textarea></label>
         <div class="admin-line admin-wide"><button id="admin-save" class="button profile-button" type="submit">Tambah tautan</button>
           <button id="admin-cancel" class="button profile-button" type="button" hidden>Batal mengedit</button></div>
       </form>
+      <div class="admin-content-filter"><label>Cari konten<input id="admin-filter" type="search" placeholder="Cari judul atau kategori"></label></div>
       <ul class="admin-list" id="admin-items"></ul>
     </section>
-    <section id="admin-accounts-section" class="admin-section" aria-labelledby="admin-accounts-title" hidden>
-      <h3 id="admin-accounts-title">Akun editor</h3>
-      <form id="admin-create-account">
+    <section class="admin-section" aria-labelledby="admin-gallery-title" data-admin-section="gallery" hidden>
+      <div class="admin-section-heading"><h3 id="admin-gallery-title">Galeri gambar</h3><p>Unggah JPG, PNG, atau WebP maksimal 1 MB per gambar. Kapasitas galeri 100 gambar atau 50 MB.</p></div>
+      <form id="admin-upload" class="admin-fields">
+        <label class="admin-wide admin-upload-field">Pilih gambar<input id="admin-image-file" name="image" type="file" accept="image/jpeg,image/png,image/webp" required></label>
+        <img id="admin-image-preview" class="admin-image-preview admin-wide" alt="Pratinjau gambar yang akan diunggah" hidden>
+        <label class="admin-wide">Keterangan gambar<input name="caption" type="text" maxlength="200" placeholder="Tulis keterangan singkat" required></label>
+        <button class="button profile-button" type="submit">Unggah ke galeri</button>
+      </form>
+      <ul id="admin-images" class="admin-image-grid"></ul>
+    </section>
+    <section id="admin-accounts-section" class="admin-section" aria-labelledby="admin-accounts-title" data-admin-section="accounts" hidden>
+      <div class="admin-section-heading"><h3 id="admin-accounts-title">Akun editor</h3><p>Buat kode akses berbeda untuk setiap editor.</p></div>
+      <form id="admin-create-account" class="admin-fields">
         <label>Nama editor<input name="name" type="text" autocomplete="off" maxlength="80" required></label>
-        <button class="button profile-button" type="submit">Buat kode akses</button>
+        <label>Kode akses pilihan<input name="code" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Minimal 10 karakter (opsional)"></label>
+        <p class="admin-form-hint admin-wide">Kosongkan kode untuk membuat kode acak otomatis.</p>
+        <button class="button profile-button" type="submit">Buat akun editor</button>
       </form>
       <div class="admin-code-box" id="admin-created-code" hidden>
         <label>Kode baru. Salin sebelum menutup panel.<input id="admin-generated-code" type="text" readonly></label>
@@ -57,11 +81,20 @@
       </div>
       <ul class="admin-list" id="admin-accounts"></ul>
     </section>
+    <section class="admin-section" aria-labelledby="admin-security-title" data-admin-section="security" hidden>
+      <div class="admin-section-heading"><h3 id="admin-security-title">Atur kode akses Anda</h3><p>Gunakan kode 10–128 karakter yang mudah Anda ingat. Kode lama berhenti berlaku setelah disimpan.</p></div>
+      <form id="admin-change-code" class="admin-fields">
+        <label class="admin-wide">Kode saat ini<input name="currentCode" type="password" autocomplete="current-password" maxlength="140" required></label>
+        <label>Kode baru<input name="newCode" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+        <label>Ulangi kode baru<input name="confirmCode" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+        <button class="button profile-button" type="submit">Simpan kode akses</button>
+      </form>
+    </section>
   </div>
 </dialog>
 <template id="visitor-widget-template">
   <section class="glass visitor-widget block" aria-labelledby="visitor-title" id="statistik">
-    <div class="section-head"><h2 id="visitor-title">Statistik pengunjung</h2><small>Waktu Jakarta</small></div>
+    <div class="section-head"><h2 id="visitor-title">Statistik pengunjung</h2><small>Waktu lokal</small></div>
     <dl>
       <div><dt>Sedang online</dt><dd data-stat="online">–</dd></div>
       <div><dt>Pengunjung hari ini</dt><dd data-stat="visitors_today">–</dd></div>

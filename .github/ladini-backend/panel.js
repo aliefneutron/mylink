@@ -20,6 +20,67 @@
   };
   let session = '';
   let editing = '';
+  let currentAccount;
+  let currentItems = [];
+  let activeTab = 'content';
+  let previewImageURL;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const builtInItems = JSON.parse(activate('ladini-content-index')?.textContent || '[]');
+  const baseline = [...document.querySelectorAll('[data-link-key]')].map((node) => ({
+    node, id:node.dataset.linkKey, html:node.innerHTML, href:node.getAttribute('href'), video:node.dataset.video,
+    title:node.dataset.title, label:node.getAttribute('aria-label')
+  }));
+  function applyOverrides(overrides = []) {
+    const changes = new Map(overrides.map((item)=>[item.id,item]));
+    for(const original of baseline) {
+      const {node} = original;
+      const change = changes.get(original.id);
+      const holder = node.parentElement?.matches('.nav-group') ? node.parentElement : node.closest('li') || node.closest('article.video') || node;
+      holder.hidden = Boolean(change?.hidden);
+      node.innerHTML = original.html;
+      if(original.href) node.setAttribute('href', original.href);
+      if(original.video) {
+        node.dataset.video = original.video;
+        node.dataset.title = original.title;
+        node.setAttribute('aria-label',original.label);
+      }
+      if(!change || change.hidden || !change.title || !change.url) continue;
+      if(original.video) {
+        const url = new URL(change.url);
+        const id = url.hostname === 'youtu.be' ? url.pathname.split('/')[1] :
+          url.pathname === '/watch' ? url.searchParams.get('v') : url.pathname.split('/')[2];
+        node.dataset.video = /^[\w-]{11}$/.test(id||'') ? id : '';
+        node.dataset.title = change.title;
+        node.setAttribute('aria-label','Putar '+change.title);
+        const label = node.querySelector('.video-label');
+        if(label) label.textContent = change.title;
+        const photo = node.querySelector('img');
+        if(photo && node.dataset.video) photo.src='https://i.ytimg.com/vi/'+node.dataset.video+'/hqdefault.jpg';
+        node.dataset.videoUrl = change.url;
+      } else {
+        if (!/^#[A-Za-z0-9][A-Za-z0-9/?=%_.&-]*$/.test(change.url) && !change.url.startsWith('https://')) continue;
+        node.setAttribute('href',change.url);
+        const title = node.querySelector('strong');
+        if(title) title.textContent = change.title;
+        else node.textContent = change.title;
+      }
+    }
+  }
+
+  function showTab(tab) {
+    if (tab === 'accounts' && currentAccount?.role !== 'owner') tab = 'content';
+    activeTab = tab;
+    document.querySelectorAll('[data-admin-section]').forEach((section) => {
+      section.hidden = section.dataset.adminSection !== tab;
+    });
+    document.querySelectorAll('[data-admin-tab]').forEach((button) => {
+      if (button.dataset.adminTab === tab) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+  }
+  document.querySelectorAll('[data-admin-tab]').forEach((button) => {
+    button.addEventListener('click', () => { notice(''); showTab(button.dataset.adminTab); });
+  });
 
   function element(tag, content, className) {
     const node = document.createElement(tag);
@@ -50,6 +111,7 @@
   function clearEdit() {
     editing = '';
     itemForm.reset();
+    itemForm.elements.kind.disabled = false;
     activate('admin-save').textContent = 'Tambah tautan';
     activate('admin-cancel').hidden = true;
   }
@@ -65,6 +127,9 @@
     codeBox.hidden = true;
     codeInput.value = '';
     clearEdit();
+    activate('admin-change-code').reset();
+    currentAccount = null;
+    showTab('content');
   }
 
   async function run(control, operation) {
@@ -95,29 +160,27 @@
   }
 
   async function refreshDashboard() {
-    const { account, items, accounts } = await request('admin', { auth: true });
+    const { account, items, accounts, images, overrides = [] } = await request('admin', { auth: true });
+    currentAccount = account;
+    const changes = new Map(overrides.map((item)=>[item.id,item]));
+    currentItems = [
+      ...builtInItems.map((item)=>{const change=changes.get(item.id);return {...item,...(change?.title&&{title:change.title,url:change.url}),hidden:Boolean(change?.hidden),id:'base-'+item.id};}),
+      ...items
+    ];
     login.hidden = true;
     dashboard.hidden = false;
     dialog.classList.remove('admin-login-mode');
     dialog.setAttribute('aria-labelledby', 'admin-title');
     activate('admin-account').textContent = account.name + ' · ' + (account.role === 'owner' ? 'Pemilik' : 'Editor');
-    activate('admin-accounts-section').hidden = account.role !== 'owner';
-    activate('admin-items').replaceChildren(...(items.length ? items.map((item) => row(item.title, labels[item.kind],
-      action('Edit', async () => {
-        editing = item.id;
-        for (const field of ['kind', 'title', 'url', 'description']) itemForm.elements[field].value = item[field];
-        activate('admin-save').textContent = 'Simpan perubahan';
-        activate('admin-cancel').hidden = false;
-        itemForm.elements.title.focus();
-      }),
-      action('Hapus', async () => {
-        if (!window.confirm('Hapus tautan “' + item.title + '”?')) return;
-        await request('admin/content/' + item.id, { method: 'DELETE', auth: true });
-        if (editing === item.id) clearEdit();
-        await Promise.all([refreshDashboard(), refreshContent()]);
-        notice('Tautan dihapus.');
-      })
-    )) : [row('Belum ada tautan tambahan.', '')]));
+    activate('admin-accounts-tab').hidden = account.role !== 'owner';
+    activate('admin-count-links').textContent = currentItems.filter(item=>!item.hidden).length;
+    activate('admin-count-images').textContent = images.length;
+    showTab(activeTab);
+    renderItems();
+    renderImages(images);
+    void request('stats?tz=' + encodeURIComponent(timezone)).then((stats) => {
+      activate('admin-count-visitors').textContent = new Intl.NumberFormat('id-ID').format(stats.visitors_today);
+    }).catch(() => {});
 
     activate('admin-accounts').replaceChildren(...accounts.map((account) => {
       const disabled = account.disabled ? 'Dicabut' : account.role === 'owner' ? 'Pemilik' : 'Editor aktif';
@@ -130,6 +193,104 @@
       }));
     }));
   }
+
+  function renderItems() {
+    const term = activate('admin-filter').value.trim().toLocaleLowerCase('id');
+    const items = currentItems.filter((item) => (item.title + ' ' + labels[item.kind] + ' ' + item.url).toLocaleLowerCase('id').includes(term));
+    activate('admin-items').replaceChildren(...(items.length ? items.map((item) => {
+      if(item.hidden) return row(item.title,labels[item.kind]+' · Dihapus',action('Pulihkan',async()=>{
+        await request('admin/overrides/'+item.id.slice(5),{method:'POST',auth:true});
+        await Promise.all([refreshDashboard(),refreshContent()]);
+        notice('Tautan dipulihkan.');
+      }));
+      return row(item.title, labels[item.kind] + ' · ' + item.url,
+      action('Edit', async () => {
+        editing = item.id;
+        for (const field of ['kind', 'title', 'url', 'description']) itemForm.elements[field].value = item[field];
+        activate('admin-save').textContent = 'Simpan perubahan';
+        activate('admin-cancel').hidden = false;
+        itemForm.elements.kind.disabled = item.id.startsWith('base-');
+        itemForm.elements.title.focus();
+      }),
+      action('Hapus', async () => {
+        if (!window.confirm('Hapus tautan “' + item.title + '”?')) return;
+        const path = item.id.startsWith('base-') ? 'admin/overrides/'+item.id.slice(5) : 'admin/content/'+item.id;
+        await request(path, { method: 'DELETE', auth: true });
+        if (editing === item.id) clearEdit();
+        await Promise.all([refreshDashboard(), refreshContent()]);
+        notice('Tautan dihapus.');
+      })
+    );}) : [row(term ? 'Konten tidak ditemukan.' : 'Belum ada konten.', '')]));
+  }
+  activate('admin-filter').addEventListener('input', renderItems);
+
+  function renderImages(images) {
+    activate('admin-images').replaceChildren(...images.map((image) => {
+      const li = element('li');
+      const photo = element('img');
+      photo.src = root + '/api/images/' + image.id;
+      photo.alt = image.caption;
+      photo.loading = 'lazy';
+      li.append(photo, element('strong', image.caption), action('Hapus gambar', async () => {
+        if (!window.confirm('Hapus gambar “' + image.caption + '”?')) return;
+        await request('admin/images/' + image.id, { method: 'DELETE', auth: true });
+        await Promise.all([refreshDashboard(), refreshGallery()]);
+        notice('Gambar dihapus.');
+      }));
+      return li;
+    }));
+  }
+  const upload = activate('admin-upload');
+  const imageFile = activate('admin-image-file');
+  function clearPreview() {
+    if (previewImageURL) URL.revokeObjectURL(previewImageURL);
+    previewImageURL = null;
+    activate('admin-image-preview').removeAttribute('src');
+    activate('admin-image-preview').hidden = true;
+  }
+  imageFile.addEventListener('change', () => {
+    clearPreview();
+    const file = imageFile.files[0];
+    if (!file) return;
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 1048576) {
+      imageFile.value = '';
+      notice('Pilih JPG, PNG, atau WebP maksimal 1 MB.', true);
+      return;
+    }
+    previewImageURL = URL.createObjectURL(file);
+    activate('admin-image-preview').src = previewImageURL;
+    activate('admin-image-preview').hidden = false;
+    notice('');
+  });
+  upload.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const file = imageFile.files[0];
+    if (!file) return;
+    void run(event.submitter, async () => {
+      const data = await new Promise((done, fail) => {
+        const reader = new FileReader();
+        reader.onload = () => done(reader.result);
+        reader.onerror = () => fail(new Error('Gambar gagal dibaca.'));
+        reader.readAsDataURL(file);
+      });
+      await request('admin/images', { method: 'POST', auth: true, body: { data, caption: upload.elements.caption.value } });
+      upload.reset();
+      clearPreview();
+      await Promise.all([refreshDashboard(), refreshGallery()]);
+      notice('Gambar sudah tampil di galeri LADINI.');
+    });
+  });
+  activate('admin-change-code').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const body = Object.fromEntries(new FormData(form));
+    if (body.newCode !== body.confirmCode) { notice('Konfirmasi kode belum sama.', true); return; }
+    void run(event.submitter, async () => {
+      await request('admin/code', { method: 'POST', auth: true, body });
+      form.reset();
+      notice('Kode akses berhasil diganti. Gunakan kode baru saat masuk berikutnya.');
+    });
+  });
 
   const adminButton = activate('admin-open');
   function showCode(visible) {
@@ -148,6 +309,10 @@
     codeInput.value = '';
     login.reset();
     showCode(false);
+    activate('admin-change-code').reset();
+    accountForm.reset();
+    clearPreview();
+    upload.reset();
   });
   login.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -170,8 +335,10 @@
   itemForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const body = Object.fromEntries(new FormData(itemForm));
+    body.kind = itemForm.elements.kind.value;
     void run(event.submitter, async () => {
-      await request(editing ? 'admin/content/' + editing : 'admin/content', {
+      const target = editing.startsWith('base-') ? 'admin/overrides/'+editing.slice(5) : editing ? 'admin/content/'+editing : 'admin/content';
+      await request(target, {
         auth: true, method: editing ? 'PATCH' : 'POST', body
       });
       clearEdit();
@@ -198,11 +365,14 @@
 
   function externalLink(item) {
     const anchor = element('a', '', 'managed-link');
-    const url = new URL(item.url);
-    if (url.protocol !== 'https:') return anchor;
-    anchor.href = url.href;
-    anchor.target = '_blank';
-    anchor.rel = 'noopener noreferrer';
+    const url = new URL(item.url, location.href);
+    const internal = item.url.startsWith('#');
+    if (!internal && url.protocol !== 'https:') return anchor;
+    anchor.href = internal ? item.url : url.href;
+    if (!internal) {
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+    }
     anchor.dataset.managed = 'true';
     anchor.append(element('strong', item.title));
     if (item.description) anchor.append(element('small', item.description));
@@ -259,7 +429,8 @@
   }
 
   async function refreshContent() {
-    const { items } = await request('content');
+    const { items, overrides } = await request('content');
+    applyOverrides(overrides);
     for (let i = entries.length - 1; i >= 0; i--) {
       if (entries[i].dataset.managed) entries.splice(i, 1);
     }
@@ -286,10 +457,48 @@
   activate('home-view').append(widget);
   const numberFormat = new Intl.NumberFormat('id-ID');
   async function refreshStats() {
-    const stats = await request('stats');
+    const stats = await request('stats?tz=' + encodeURIComponent(timezone));
     document.querySelectorAll('[data-stat]').forEach((stat) => {
       stat.textContent = numberFormat.format(stats[stat.dataset.stat]);
     });
+  }
+  const timePanel = element('div', '', 'ladini-local-clock');
+  const clock = element('time');
+  const clockZone = element('small', 'Waktu lokal · ' + timezone.replaceAll('_', ' '));
+  timePanel.append(clock, clockZone);
+  document.querySelector('.header').after(timePanel);
+  function updateClock() {
+    const now = new Date();
+    clock.dateTime = now.toISOString();
+    clock.textContent = new Intl.DateTimeFormat('id-ID', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }).format(now);
+  }
+  updateClock();
+  window.setInterval(updateClock, 1000);
+  const statsZone = document.querySelector('#statistik .section-head small');
+  statsZone.textContent = 'Waktu lokal · ' + timezone.replaceAll('_', ' ');
+
+  async function refreshGallery() {
+    const { images } = await request('images');
+    let section = activate('managed-gallery');
+    if (!section) {
+      section = element('section', '', 'block');
+      section.id = 'managed-gallery';
+      section.append(element('h2', 'Galeri kegiatan'), element('div', '', 'public-image-grid'));
+      activate('home-view').insertBefore(section, activate('statistik'));
+    }
+    section.hidden = !images.length;
+    section.querySelector('div').replaceChildren(...images.map((image) => {
+      const figure = element('figure', '', 'glass');
+      const photo = element('img');
+      photo.src = root + '/api/images/' + image.id;
+      photo.alt = image.caption;
+      photo.loading = 'lazy';
+      figure.append(photo, element('figcaption', image.caption));
+      return figure;
+    }));
   }
 
   let visitor = crypto.randomUUID();
@@ -333,5 +542,6 @@
   document.addEventListener('visibilitychange', visit);
   window.setInterval(visit, 60000);
   void refreshContent().catch(() => {});
+  void refreshGallery().catch(() => {});
   void visit();
 })();
