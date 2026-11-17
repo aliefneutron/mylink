@@ -1,0 +1,1 @@
+ALTER TABLE link_overrides ADD COLUMN body TEXT NOT NULL DEFAULT '';

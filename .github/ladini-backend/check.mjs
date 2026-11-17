@@ -40,6 +40,11 @@ try {
   assert.equal((await request('content',200)).overrides[0].hidden,1);
   await request('admin/overrides/'+override,204,{method:'POST',session:owner});
   assert.equal((await request('content',200)).overrides.length,0);
+  await request('admin/overrides/'+override,204,{method:'PATCH',session:owner,body:{kind:'teks',title:'Profil baru',body:'Isi profil diperbarui melalui admin.'}});
+  assert.equal((await request('content',200)).overrides[0].body,'Isi profil diperbarui melalui admin.');
+  await request('admin/overrides/'+override,204,{method:'DELETE',session:owner});
+  assert.equal((await request('content',200)).overrides[0].hidden,1);
+  await request('admin/overrides/'+override,204,{method:'POST',session:owner});
   await request('admin/accounts', 201, {method:'POST', session:owner, body:{name:'Editor kode pilihan',code:customEditorCode}});
   const customEditor = await request('login',200,{method:'POST',body:{code:customEditorCode}});
   await request('admin/accounts',409,{method:'POST',session:owner,body:{name:'Duplikat',code:customEditorCode}});

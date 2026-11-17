@@ -46,6 +46,22 @@ html = html.replace(/<button\b([^>]*data-video="([^"]+)"[^>]*)>/g,(all,attribute
   index.set(contentId,{id:contentId,kind:'video',title:plain(title),url:'https://www.youtube.com/watch?v='+id,description:'Video bawaan LADINI'});
   return '<button'+attributes.replace(/ data-link-key="[^"]*"/g,'')+' data-link-key="'+contentId+'">';
 });
+const textOccurrences = new Map();
+const publicEnd = html.indexOf('<button type="button" class="admin-entry"');
+const publicHTML = publicEnd < 0 ? html : html.slice(0,publicEnd);
+const publicTail = publicEnd < 0 ? '' : html.slice(publicEnd);
+html = publicHTML.replace(/<(p|h[1-4]|li)\b([^>]*)>([\s\S]*?)<\/\1>/g,(all,tag,attributes,body)=>{
+  if (/<(?:a|button|input|select|textarea|iframe|video)\b/i.test(body)) return all;
+  const content = plain(body);
+  if (content.length < 2 || content.length > 5000) return all;
+  const existingKey = attributes.match(/data-text-key="([^"]+)"/)?.[1];
+  const signature = tag + ':' + content;
+  const count = textOccurrences.get(signature) || 0;
+  textOccurrences.set(signature,count+1);
+  const id = existingKey || key('text:'+signature+':'+count);
+  index.set(id,{id,kind:'teks',title:content.slice(0,160),description:'Isi teks bawaan LADINI',body:content,url:''});
+  return '<'+tag+attributes.replace(/ data-text-key="[^"]*"/g,'')+' data-text-key="'+id+'">'+body+'</'+tag+'>';
+}) + publicTail;
 const contentIndex = '<script type="application/json" id="ladini-content-index">' +
   JSON.stringify([...index.values()]).replaceAll('<','\\u003c') + '</script>';
 html = html.replace("const player = document.createElement('iframe');",

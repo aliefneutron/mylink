@@ -31,6 +31,8 @@ Pemilik dapat membuat kode editor dan mencabut akses beserta sesi editor. Kode b
 
 Menu Konten mengelola tautan bawaan dan tambahan, video, layanan, informasi, dan pengumuman. Tautan bawaan dapat diedit, dihapus dari tampilan, atau dipulihkan. Perubahan disimpan di D1 dan diterapkan ketika halaman dimuat atau setelah perubahan admin disimpan. Tautan baru dapat berupa HTTPS atau hash halaman lokal LADINI. Penomoran SIVA sudah dihapus dari halaman dan navigasi bawaan.
 
+Pilihan Teks Halaman mengelola judul dan isi teks bawaan yang tampil dalam blok terpisah. Gunakan pencarian isi teks untuk menemukan uraian profil atau informasi, lalu edit Isi Teks atau hapus blok tersebut. Penghapusan konten bawaan dapat dibatalkan melalui jenis Konten Dihapus dan tombol Pulihkan. Tautan dan konten tambahan yang dibuat melalui dashboard dapat diedit dan dihapus dari database.
+
 Menu Galeri menerima JPG, PNG, dan WebP maksimal 1 MB per gambar, dengan kapasitas 100 gambar atau 50 MB. Menu Akun Editor tersedia bagi pemilik dan menerima kode pilihan sendiri atau kode acak. Setiap akun dapat mengganti kodenya sendiri melalui Kode Akses dengan memasukkan kode saat ini serta kode baru 10–128 karakter. Sesi lain milik akun berakhir setelah kode diganti.
 
 Secret Worker `CODE_PEPPER` digunakan untuk melindungi kode pilihan. Buat sekali dengan nilai acak panjang melalui `wrangler secret put CODE_PEPPER`. Simpan secret ini tetap sama saat deploy berikutnya agar kode pilihan yang sudah dibuat tetap berlaku. Kode acak pemilik dari versi sebelumnya tetap didukung.

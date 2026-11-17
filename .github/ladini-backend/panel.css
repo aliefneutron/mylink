@@ -70,7 +70,7 @@
 .admin-section-heading p, .admin-form-hint { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
 .admin-fields { border: 1px solid var(--stroke); border-radius: 15px; padding: 18px; background: #1b2c424f; }
 .admin-fields .button[type="submit"] { background: #87f0cb; color: #0a3028; border-color: transparent; justify-content: center; }
-.admin-content-filter { margin-top: 18px; max-width: 400px; }
+.admin-content-filter { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 18px; }
 .admin-list li { padding: 14px 0; }
 .admin-list li > div strong { font-size: 14px; }
 .admin-list li > div small { font-size: 12px; margin-top: 3px; }

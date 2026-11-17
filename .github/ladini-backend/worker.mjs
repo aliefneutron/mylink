@@ -137,7 +137,7 @@ async function listContent(db) {
   return (await db.prepare('SELECT ' + publicFields + ' FROM content ORDER BY updated_at DESC, id').all()).results;
 }
 async function listOverrides(db) {
-  return (await db.prepare('SELECT id, title, url, hidden FROM link_overrides').all()).results;
+  return (await db.prepare('SELECT id, title, url, hidden, body FROM link_overrides').all()).results;
 }
 
 async function login(request, env, now) {
@@ -289,19 +289,27 @@ async function route(request, env, origin) {
   });
   const overrideId = pathname.match(/^\/api\/admin\/overrides\/([a-f0-9]{20})$/)?.[1];
   if (overrideId && method === 'PATCH') {
-    const input = await json(request);
+    const input = await json(request, 30000);
     const title = text(input.title, 160);
     let url = text(input.url, 2048);
+    if (input.kind === 'teks') {
+      const body = text(input.body, 5000);
+      if (!title || !body) throw new ApiError(400, 'Isi judul dan teks maksimal 5.000 karakter.');
+      await db.prepare(`INSERT INTO link_overrides (id,title,url,hidden,updated_at,updated_by,body) VALUES (?, ?, '', 0, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET title=excluded.title, body=excluded.body, hidden=0, updated_at=excluded.updated_at, updated_by=excluded.updated_by`)
+        .bind(overrideId,title,now,account.id,body).run();
+      return ok(null,204);
+    }
     if (!title || !url) throw new ApiError(400, 'Isi judul dan tautan yang valid.');
     if (input.kind === 'video') contentPayload({kind:'video',title,url});
     else if (!/^#[A-Za-z0-9][A-Za-z0-9/?=%_.&-]*$/.test(url)) url = safeURL(url).href;
-    await db.prepare(`INSERT INTO link_overrides VALUES (?, ?, ?, 0, ?, ?)
+    await db.prepare(`INSERT INTO link_overrides (id,title,url,hidden,updated_at,updated_by) VALUES (?, ?, ?, 0, ?, ?)
       ON CONFLICT(id) DO UPDATE SET title=excluded.title, url=excluded.url, hidden=0, updated_at=excluded.updated_at, updated_by=excluded.updated_by`)
       .bind(overrideId, title, url, now, account.id).run();
     return ok(null, 204);
   }
   if (overrideId && method === 'DELETE') {
-    await db.prepare(`INSERT INTO link_overrides VALUES (?, '', '', 1, ?, ?)
+    await db.prepare(`INSERT INTO link_overrides (id,title,url,hidden,updated_at,updated_by) VALUES (?, '', '', 1, ?, ?)
       ON CONFLICT(id) DO UPDATE SET hidden=1, updated_at=excluded.updated_at, updated_by=excluded.updated_by`)
       .bind(overrideId, now, account.id).run();
     return ok(null, 204);

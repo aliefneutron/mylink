@@ -46,15 +46,17 @@
             <option value="informasi">Informasi</option>
             <option value="pengumuman">Pengumuman</option>
             <option value="tautan">Tautan lainnya</option>
+            <option value="teks" hidden>Teks halaman</option>
           </select>
         </label>
         <label>Judul<input name="title" type="text" maxlength="160" required></label>
-        <label class="admin-wide">Alamat tautan<input name="url" type="text" inputmode="url" maxlength="2048" placeholder="https:// atau #layanan/nama-halaman" required></label>
+        <label class="admin-wide" id="admin-url-label">Alamat tautan<input name="url" type="text" inputmode="url" maxlength="2048" placeholder="https:// atau #layanan/nama-halaman" required></label>
+        <label class="admin-wide" id="admin-body-label" hidden>Isi teks<textarea name="body" maxlength="5000" rows="5"></textarea></label>
         <label class="admin-wide">Deskripsi (opsional)<textarea name="description" maxlength="700" rows="2"></textarea></label>
         <div class="admin-line admin-wide"><button id="admin-save" class="button profile-button" type="submit">Tambah tautan</button>
           <button id="admin-cancel" class="button profile-button" type="button" hidden>Batal mengedit</button></div>
       </form>
-      <div class="admin-content-filter"><label>Cari konten<input id="admin-filter" type="search" placeholder="Cari judul atau kategori"></label></div>
+      <div class="admin-content-filter"><label>Cari konten<input id="admin-filter" type="search" placeholder="Cari judul, isi teks, atau tautan"></label><label>Jenis konten<select id="admin-kind-filter"><option value="">Semua jenis</option><option value="layanan">Layanan</option><option value="informasi">Informasi</option><option value="video">Video edukasi</option><option value="teks">Teks halaman</option><option value="pengumuman">Pengumuman</option><option value="tautan">Tautan lainnya</option><option value="deleted">Konten dihapus</option></select></label></div>
       <ul class="admin-list" id="admin-items"></ul>
     </section>
     <section class="admin-section" aria-labelledby="admin-gallery-title" data-admin-section="gallery" hidden>

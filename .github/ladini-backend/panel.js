@@ -16,7 +16,7 @@
   const codeInput = activate('admin-generated-code');
   const labels = {
     video: 'Video edukasi', layanan: 'Layanan', informasi: 'Informasi',
-    pengumuman: 'Pengumuman', tautan: 'Tautan lainnya'
+    pengumuman: 'Pengumuman', tautan: 'Tautan lainnya', teks: 'Teks halaman'
   };
   let session = '';
   let editing = '';
@@ -30,8 +30,17 @@
     node, id:node.dataset.linkKey, html:node.innerHTML, href:node.getAttribute('href'), video:node.dataset.video,
     title:node.dataset.title, label:node.getAttribute('aria-label')
   }));
+  const baseText = [...document.querySelectorAll('[data-text-key]')].map(node=>({
+    node,id:node.dataset.textKey,html:node.innerHTML
+  }));
   function applyOverrides(overrides = []) {
     const changes = new Map(overrides.map((item)=>[item.id,item]));
+    for (const original of baseText) {
+      const change = changes.get(original.id);
+      original.node.hidden = Boolean(change?.hidden);
+      original.node.innerHTML = original.html;
+      if(change?.body && !change.hidden) original.node.textContent = change.body;
+    }
     for(const original of baseline) {
       const {node} = original;
       const change = changes.get(original.id);
@@ -117,6 +126,10 @@
     itemForm.reset();
     itemForm.elements.kind.disabled = false;
     itemForm.elements.description.disabled = false;
+    itemForm.elements.body.value = '';
+    activate('admin-body-label').hidden = true;
+    activate('admin-url-label').hidden = false;
+    itemForm.elements.url.required = true;
     activate('admin-save').textContent = 'Tambah tautan';
     activate('admin-cancel').hidden = true;
   }
@@ -169,7 +182,7 @@
     currentAccount = account;
     const changes = new Map(overrides.map((item)=>[item.id,item]));
     currentItems = [
-      ...builtInItems.map((item)=>{const change=changes.get(item.id);return {...item,...(change?.title&&{title:change.title,url:change.url}),hidden:Boolean(change?.hidden),id:'base-'+item.id};}),
+      ...builtInItems.map((item)=>{const change=changes.get(item.id);return {...item,...(change?.title&&{title:change.title,url:change.url,body:change.body||item.body}),hidden:Boolean(change?.hidden),id:'base-'+item.id};}),
       ...items
     ];
     login.hidden = true;
@@ -201,7 +214,9 @@
 
   function renderItems() {
     const term = activate('admin-filter').value.trim().toLocaleLowerCase('id');
-    const items = currentItems.filter((item) => (item.title + ' ' + labels[item.kind] + ' ' + item.url + ' ' + item.description).toLocaleLowerCase('id').includes(term));
+    const kind = activate('admin-kind-filter').value;
+    const items = currentItems.filter((item) => (!kind || (kind === 'deleted' ? item.hidden : item.kind === kind)) &&
+      (item.title + ' ' + labels[item.kind] + ' ' + item.url + ' ' + item.description + ' ' + (item.body||'')).toLocaleLowerCase('id').includes(term));
     activate('admin-items').replaceChildren(...(items.length ? items.map((item) => {
       if(item.hidden) return row(item.title,labels[item.kind]+' · Dihapus',action('Pulihkan',async()=>{
         await request('admin/overrides/'+item.id.slice(5),{method:'POST',auth:true});
@@ -211,7 +226,11 @@
       return row(item.title, labels[item.kind] + ' · ' + (item.description || item.url),
       action('Edit', async () => {
         editing = item.id;
-        for (const field of ['kind', 'title', 'url', 'description']) itemForm.elements[field].value = item[field];
+        for (const field of ['kind', 'title', 'url', 'description', 'body']) itemForm.elements[field].value = item[field] || '';
+        const isText = item.kind === 'teks';
+        activate('admin-body-label').hidden = !isText;
+        activate('admin-url-label').hidden = isText;
+        itemForm.elements.url.required = !isText;
         activate('admin-save').textContent = 'Simpan perubahan';
         activate('admin-cancel').hidden = false;
         itemForm.elements.kind.disabled = item.id.startsWith('base-');
@@ -229,6 +248,7 @@
     );}) : [row(term ? 'Konten tidak ditemukan.' : 'Belum ada konten.', '')]));
   }
   activate('admin-filter').addEventListener('input', renderItems);
+  activate('admin-kind-filter').addEventListener('change', renderItems);
 
   function renderImages(images) {
     activate('admin-images').replaceChildren(...images.map((image) => {

@@ -10,6 +10,7 @@ db.exec(readFileSync(new URL('migrations/0001_init.sql', import.meta.url), 'utf8
 db.exec(readFileSync(new URL('migrations/0002_gallery.sql', import.meta.url), 'utf8'));
 db.exec(readFileSync(new URL('migrations/0003_visit_time.sql', import.meta.url), 'utf8'));
 db.exec(readFileSync(new URL('migrations/0004_link_overrides.sql', import.meta.url), 'utf8'));
+db.exec(readFileSync(new URL('migrations/0005_text_overrides.sql', import.meta.url), 'utf8'));
 
 function statement(query) {
   const prepared = db.prepare(query);
