@@ -18,8 +18,8 @@ const sapaStart=html.indexOf('<div data-directory-page="layanan/penjadwalan-kegi
 if(sapaStart<0)throw new Error('Halaman penjadwalan tidak ditemukan.');
 const sapaEnd=html.indexOf('<div data-directory-page=',sapaStart+10);
 if(sapaEnd<0)throw new Error('Batas halaman penjadwalan tidak ditemukan.');
-let sapaPage=html.slice(sapaStart,sapaEnd).replace(/<section id="sapa-app"[\s\S]*?<\/section>\s*/,'');
-sapaPage=sapaPage.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g,card=>card.includes('https://forms.gle/8ucBygHA7KcqdBEq5')?'':card);
+let sapaPage=html.slice(sapaStart,sapaEnd).replace(/<section id="(?:sapa-app|sapa-reservations)"[\s\S]*?<\/section>\s*/g,'');
+sapaPage=sapaPage.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g,card=>card.includes('https://forms.gle/8ucBygHA7KcqdBEq5')||/PANDUAN PENJADWALAN|LIHAT JADWAL/i.test(card)?'':card);
 sapaPage=sapaPage.replace('<div class="directory-content">',asset('sapa-public.html')+'\n<div class="directory-content">');
 html=html.slice(0,sapaStart)+sapaPage+html.slice(sapaEnd);
 const panelHTML=asset('panel.html').replace('<!-- SAPA ADMIN -->',()=>asset('sapa-admin.html'));

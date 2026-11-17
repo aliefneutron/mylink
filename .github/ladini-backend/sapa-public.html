@@ -15,11 +15,13 @@
       <label class="sapa-wide">Tautan surat / lampiran (opsional)<input name="attachment" type="url" maxlength="2048" placeholder="https://drive.google.com/…"><small>Gunakan tautan dokumen yang dapat diakses petugas.</small></label>
       <label class="sapa-wide">Keterangan (opsional)<textarea name="notes" maxlength="1000" rows="2"></textarea></label>
       <label class="sapa-trap" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
-      <button id="sapa-submit" class="button profile-button" type="submit">Pesan ruangan seharian</button>
+      <button id="sapa-submit" class="button profile-button" type="submit">Pesan ruangan</button>
       <button id="sapa-new" class="button profile-button" type="button">Kosongkan formulir</button>
     </fieldset>
   </form>
-  <div class="sapa-heading sapa-list-heading"><div><h3>Daftar pemesanan</h3><p>Nama pemesan, bidang, kegiatan, dan tanggal penggunaan ruangan.</p></div><button id="sapa-refresh" class="button profile-button" type="button">Perbarui daftar</button></div>
+</section>
+<section id="sapa-reservations" class="glass content-card block" aria-labelledby="sapa-reservations-title">
+  <div class="sapa-heading"><div><h2 id="sapa-reservations-title">Daftar pemesanan</h2><p>Nama pemesan, bidang, kegiatan, dan tanggal penggunaan ruangan.</p></div><button id="sapa-refresh" class="button profile-button" type="button">Perbarui daftar</button></div>
   <div class="sapa-filters"><label>Tampilkan<select id="sapa-period"><option value="recent">Dipesan 30 hari terakhir</option><option value="upcoming">Jadwal mendatang</option></select></label><label>Bidang<select id="sapa-department-filter"><option value="">Semua bidang</option></select></label><label>Cari pemesan / kegiatan<input id="sapa-search" type="search" placeholder="Nama atau kegiatan"></label></div>
   <p id="sapa-list-count" class="admin-form-hint" aria-live="polite"></p>
   <div class="sapa-table-wrap"><table class="sapa-table"><thead><tr><th>Tanggal kegiatan</th><th>Penanggung jawab</th><th>Bidang</th><th>Kegiatan</th></tr></thead><tbody id="sapa-bookings"><tr><td colspan="4">Daftar belum dimuat.</td></tr></tbody></table></div>

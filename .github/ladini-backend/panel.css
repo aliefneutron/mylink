@@ -129,6 +129,7 @@ body { background-color: var(--site-background,#0d1228); background-size: cover;
 .sapa-heading p { color:var(--muted); font-size:14px; line-height:1.7; }
 .sapa-badge { padding:8px 14px; border:1px solid var(--stroke); border-radius:99px; color:var(--green); font-size:13px; }
 .sapa-fields { border:0; padding:0; margin:20px 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; min-width:0; }
+.sapa-fields > .button { display:flex; align-items:center; justify-content:center; text-align:center; }
 .sapa-fields label,.sapa-filters label { display:flex; flex-direction:column; gap:7px; font-size:13px; min-width:0; }
 .sapa-fields input,.sapa-fields select,.sapa-fields textarea,.sapa-filters input,.sapa-filters select { width:100%; min-width:0; padding:12px; border:1px solid var(--stroke); border-radius:10px; background:var(--card,#17243e); color:var(--ink); font:inherit; }
 .sapa-fields textarea { resize:vertical; }
