@@ -1,0 +1,75 @@
+<button type="button" class="admin-entry" id="admin-open" hidden>Admin</button>
+<dialog id="admin-dialog" class="admin-dialog admin-login-mode" aria-labelledby="admin-login-title">
+  <div class="dialog-head">
+    <h2 id="admin-title">Admin LADINI</h2>
+    <form method="dialog"><button class="icon-button" aria-label="Tutup panel admin">×</button></form>
+  </div>
+  <form id="admin-login">
+    <div class="admin-login-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 2a6.5 6.5 0 0 0-6.23 8.35L2 17.62V22h4.38L8 20.38V18h2.38l2.98-2.98A6.5 6.5 0 1 0 15.5 2Zm2 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
+    </div>
+    <h2 id="admin-login-title">Verifikasi Lisensi Akses</h2>
+    <p class="admin-login-copy">Masukkan kode akses resmi untuk membuka panel Admin LADINI.</p>
+    <div class="admin-code-field">
+      <input id="admin-code" name="code" type="password" autocomplete="current-password" aria-label="Kode akses" placeholder="KETIK KODE LISENSI..." maxlength="140" spellcheck="false" autocapitalize="none" required>
+      <button type="button" id="admin-reveal-code" class="admin-reveal-code" aria-controls="admin-code" aria-pressed="false" aria-label="Tampilkan kode akses">
+        <svg class="admin-eye" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="admin-eye-closed" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M9.9 5.2A10.5 10.5 0 0 1 12 5c6.5 0 10 7 10 7a15 15 0 0 1-3 3.8M6.2 6.2C3.6 8.2 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.8-1.2"/></svg>
+      </button>
+    </div>
+    <button class="admin-login-submit" type="submit">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V7a4 4 0 1 1 8 0"/></svg>
+      Verifikasi &amp; Masuk
+    </button>
+  </form>
+  <p id="admin-message" class="admin-message" aria-live="polite"></p>
+  <div id="admin-dashboard" hidden>
+    <div class="admin-line"><strong id="admin-account"></strong><button class="button profile-button" type="button" id="admin-logout">Keluar</button></div>
+    <section class="admin-section" aria-labelledby="admin-content-title">
+      <h3 id="admin-content-title">Kelola tautan</h3>
+      <form id="admin-item" class="admin-fields">
+        <label>Kategori
+          <select name="kind">
+            <option value="video">Video edukasi</option>
+            <option value="layanan">Layanan</option>
+            <option value="informasi">Informasi</option>
+            <option value="pengumuman">Pengumuman</option>
+            <option value="tautan">Tautan lainnya</option>
+          </select>
+        </label>
+        <label>Judul<input name="title" type="text" maxlength="160" required></label>
+        <label class="admin-wide">Alamat tautan<input name="url" type="url" maxlength="2048" placeholder="https://" required></label>
+        <label class="admin-wide">Deskripsi (opsional)<textarea name="description" maxlength="700" rows="2"></textarea></label>
+        <div class="admin-line admin-wide"><button id="admin-save" class="button profile-button" type="submit">Tambah tautan</button>
+          <button id="admin-cancel" class="button profile-button" type="button" hidden>Batal mengedit</button></div>
+      </form>
+      <ul class="admin-list" id="admin-items"></ul>
+    </section>
+    <section id="admin-accounts-section" class="admin-section" aria-labelledby="admin-accounts-title" hidden>
+      <h3 id="admin-accounts-title">Akun editor</h3>
+      <form id="admin-create-account">
+        <label>Nama editor<input name="name" type="text" autocomplete="off" maxlength="80" required></label>
+        <button class="button profile-button" type="submit">Buat kode akses</button>
+      </form>
+      <div class="admin-code-box" id="admin-created-code" hidden>
+        <label>Kode baru. Salin sebelum menutup panel.<input id="admin-generated-code" type="text" readonly></label>
+        <button class="button profile-button" type="button" id="admin-copy-code">Salin kode</button>
+      </div>
+      <ul class="admin-list" id="admin-accounts"></ul>
+    </section>
+  </div>
+</dialog>
+<template id="visitor-widget-template">
+  <section class="glass visitor-widget block" aria-labelledby="visitor-title" id="statistik">
+    <div class="section-head"><h2 id="visitor-title">Statistik pengunjung</h2><small>Waktu Jakarta</small></div>
+    <dl>
+      <div><dt>Sedang online</dt><dd data-stat="online">–</dd></div>
+      <div><dt>Pengunjung hari ini</dt><dd data-stat="visitors_today">–</dd></div>
+      <div><dt>Tayangan hari ini</dt><dd data-stat="views_today">–</dd></div>
+      <div><dt>Pengunjung bulan ini</dt><dd data-stat="visitors_month">–</dd></div>
+      <div><dt>Pengunjung bulan lalu</dt><dd data-stat="visitors_last_month">–</dd></div>
+      <div><dt>Total tayangan</dt><dd data-stat="views_total">–</dd></div>
+      <div><dt>Total pengunjung</dt><dd data-stat="visitors_total">–</dd></div>
+    </dl>
+  </section>
+</template>

@@ -338,6 +338,70 @@ dialog input { background: #0d172d; border-color: var(--stroke); }
   .breadcrumbs { justify-content: flex-start; }
 }
 </style>
+<meta name="ladini-api" content="">
+<style>.admin-entry { position: fixed; z-index: 2; bottom: 14px; right: 14px; border: 1px solid #79edc55c; padding: 8px 15px; border-radius: 24px; color: var(--green); background: #17243d; font-size: 13px; font-weight: 650; }
+.admin-entry:hover { background: #224258; }
+.admin-dialog { width: min(720px, calc(100% - 28px)); max-height: calc(100dvh - 30px); }
+.admin-dialog form { margin: 0; }
+.admin-dialog label { font-size: 13px; }
+.admin-dialog input, .admin-dialog select, .admin-dialog textarea { width: 100%; padding: 9px 11px; margin: 5px 0 10px; border: 1px solid var(--stroke); border-radius: 8px; background: #0d172d; color: var(--ink); font: inherit; }
+.admin-dialog textarea { resize: vertical; }
+.admin-dialog button:disabled { opacity: .6; cursor: wait; }
+.admin-login-mode { width: min(448px, calc(100% - 28px)); padding: 24px 24px 35px; background: #18181b; border-color: #303034; color: #f7f7fa; border-radius: 16px; }
+.admin-login-mode::backdrop { background: #09090bea; }
+.admin-login-mode .dialog-head { justify-content: flex-end; margin: 0; height: 0; }
+.admin-login-mode .dialog-head h2 { display: none; }
+.admin-login-mode .dialog-head button { position: absolute; top: 7px; right: 7px; width: 34px; height: 34px; border: 0; color: #bdbdc6; background: transparent; font-weight: 650; }
+.admin-login-mode .dialog-head button:hover { background: #ffffff15; }
+#admin-login { text-align: center; }
+.admin-login-mark { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 17px; background: linear-gradient(35deg, #f3a31a 5%, #6245dc 94%); color: #0d0b12; box-shadow: 0 8px 23px #f1a12433; }
+.admin-login-mark svg { width: 26px; height: 26px; }
+#admin-login-title { font-size: 20px; line-height: 1.25; color: #ffbc23; letter-spacing: -.018em; }
+.admin-login-copy { max-width: 320px; margin: 10px auto 19px; color: #b3b3bd; font-size: 13px; line-height: 1.45; }
+.admin-code-field { position: relative; }
+.admin-code-field #admin-code { margin: 0; min-height: 46px; padding: 10px 48px; text-align: center; border: 1px solid #44444c; border-radius: 12px; background: #0b0b0e; color: #eeeef3; font: 700 14px/1.4 'IBM Plex Mono', Consolas, monospace; letter-spacing: .05em; }
+.admin-code-field #admin-code::placeholder { color: #a0a3ae; opacity: 1; }
+.admin-reveal-code { position: absolute; top: 50%; right: 4px; display: grid; place-items: center; width: 42px; min-height: 42px; border: 0; border-radius: 9px; background: transparent; color: #a9a9b2; transform: translateY(-50%); }
+.admin-reveal-code:hover { color: #fff; }
+.admin-eye-closed, .admin-reveal-code[aria-pressed="true"] .admin-eye { display: none; }
+.admin-reveal-code[aria-pressed="true"] .admin-eye-closed { display: block; }
+.admin-login-submit { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 42px; margin-top: 12px; border: 0; border-radius: 12px; background: linear-gradient(110deg, #ffab16, #e98600); color: #111010; font: 800 13px/1.4 Inter, 'Segoe UI', sans-serif; }
+.admin-login-submit:hover { background: linear-gradient(110deg, #ffbd3d, #f0920e); }
+.admin-login-submit svg { width: 15px; height: 15px; }
+.admin-login-mode :focus-visible { outline-color: #ffbb2a; }
+.admin-login-mode .admin-message { min-height: 0; margin: 12px 0 0; font-size: 13px; text-align: center; }
+.admin-login-mode .admin-message:empty { display: none; }
+.admin-message { min-height: 1.5em; color: var(--green); overflow-wrap: anywhere; }
+.admin-message[data-error="true"] { color: #ffc1bc; }
+.admin-section { margin-top: 20px; padding-top: 13px; border-top: 1px solid var(--stroke); }
+.admin-section h3 { margin: 0 0 12px; }
+.admin-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 13px; }
+.admin-wide { grid-column: 1 / -1; }
+.admin-line, .admin-list li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.admin-line > strong, .admin-list li > div { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.admin-list { padding: 0; margin: 15px 0 0; list-style: none; }
+.admin-list li { border-top: 1px solid var(--stroke); padding: 10px 0; }
+.admin-list li > div > small { display: block; color: var(--muted); }
+.admin-list .button { min-height: 36px; }
+.admin-code-box { margin-block: 12px; padding: 12px; border: 1px solid #79edc55c; border-radius: 12px; }
+.visitor-widget { padding: clamp(16px, 3vw, 28px); }
+.visitor-widget .section-head { align-items: center; }
+.visitor-widget small { color: var(--muted); }
+.visitor-widget dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; margin: 0; }
+.visitor-widget dl > div { padding: 10px 12px; border: 1px solid var(--stroke); background: #10213986; border-radius: 10px; }
+.visitor-widget dt { color: var(--muted); font-size: 12px; }
+.visitor-widget dd { margin: 0; color: var(--green); font: 700 21px var(--heading); }
+.managed-items { margin: 0; padding: 0; list-style: none; }
+.managed-link { display: block; padding: 10px 12px; overflow-wrap: anywhere; }
+.managed-link small { display: block; color: var(--muted); }
+.managed-link:hover { color: var(--green); }
+.video-dialog video { display: block; width: 100%; max-height: 65dvh; background: #050713; border-radius: 12px; }
+@media (max-width: 480px) {
+  .admin-fields { grid-template-columns: 1fr; }
+  .admin-login-mode { padding-inline: 17px; }
+  .admin-code-field #admin-code { padding-inline: 43px; font-size: 12px; }
+}
+</style>
 </head>
 <body>
 <a class="skip" href="#konten">Lewati ke konten</a>
@@ -377,7 +441,8 @@ dialog input { background: #0d172d; border-color: var(--stroke); }
     <div class="glass content-card"><h2 id="info-title">Informasi kepegawaian</h2><ul class="updates-list"><li>Tata cara Pemberian Cuti Pada Menu (<a href="#informasi/lege-lex-dan-jure">lege, lex dan jure</a>) no.21, no.22, no.23, no.24 dan no.25 dan Menu (<a href="#informasi/sosialisasi">Sosialisasi</a>) no.6</li><li>Nomenklatur Jabatan Pelaksana ASN Dasar Hukum Pada Menu (<a href="#informasi/lege-lex-dan-jure">lege, lex dan jure</a>) no.47 dan Menu (<a href="#informasi/sosialisasi">Sosialisasi</a>) no.10</li><li>Yuks MELEK UJI KOMPETENSI JFK KEMENTERIAN KESEHATAN Pada Channel Youtube (<a href="https://www.youtube.com/@TimKerjaPengelolaanJFK">Tim Kerja Pengelolaan JFK Kementerian Kesehatan</a>)</li><li>Peraturan BKN Nomor 4 Tahun 2025 Tentang Periodisasi Kenaikan Pangkat PNS Dasar Hukum Pada Menu (<a href="#informasi/lege-lex-dan-jure">lege, lex dan jure</a>) no.39</li><li>Layanan Mantra Pada Menu (<a href="#layanan/portal-web-hukum-kepegawaian-dan-umum">Portal Web Hukum, Kepegawaian Dan Umum</a>) no.4</li><li>Peraturan Menteri PANRB Nomor 3 Tahun 2015 Tentang Roadmap Pengembangan Sistem Pengelolaan Pengaduan Pelayanan Publik Nasional Pada Menu (<a href="#informasi/lege-lex-dan-jure">lege, lex dan jure</a>) no.41 dan Layanan Lapor Pada Menu (<a href="#layanan/portal-web-hukum-kepegawaian-dan-umum">Portal Web Hukum, Kepegawaian Dan Umum</a>) no.13</li><li>SE Kepala BKN Nomor 2 Tahun 2026 Tentang Penggunaan Pakaian Seragam Batik Korpri Pada Menu (<a href="#informasi/lege-lex-dan-jure">lege, lex dan jure</a>) no.43</li><li>Keputusan Kepala Badan Kepegawaian Negara Nomor 411 Tahun 2025 Tentang Percepatan Pembangunan Dan Penerapan Manajemen Talenta Aparatur Sipil Negara Instansi Pemerintah (<a href="#informasi/lege-lex-dan-jure">lege, lex dan jure</a>) no.41</li><li>Surat Edaran Kepala Badan Kepegawaian Negara Nomor 11 Tahun 2025 Tentang Perlindungan Dan Pemanfaatan Arsip Aparatur Sipil Negara Melalui Document Management System (<a href="#informasi/lege-lex-dan-jure">lege, lex dan jure</a>) no.40</li></ul></div>
     <aside class="glass content-card"><h2>Topik informasi</h2><ul class="topics"><li><a href="#informasi/lege-lex-dan-jure">Lege, Lex dan Jure</a></li><li><a href="#informasi/pksksb">PKS/KSB</a></li><li><a href="#informasi/pro-kum-2023">Pro-Kum 2023</a></li><li><a href="#informasi/pro-kum-2024">Pro-Kum 2024</a></li><li><a href="#informasi/pro-kum-2025">Pro-Kum 2025</a></li><li><a href="#informasi/pro-kum-2026">Pro-Kum 2026</a></li><li><a href="#informasi/sosialisasi">Sosialisasi</a></li><li><a href="#informasi/adagium">Adagium</a></li></ul></aside>
   </section>
-  <section aria-labelledby="video-title" class="block" id="video-edukasi"><div class="section-head"><h2 id="video-title">Video edukasi</h2></div>
+  <section id="managed-extras" class="glass content-card block" aria-labelledby="managed-title" hidden><h2 id="managed-title">Pengumuman dan tautan tambahan</h2><ul class="managed-items"></ul></section>
+<section aria-labelledby="video-title" class="block" id="video-edukasi"><div class="section-head"><h2 id="video-title">Video edukasi</h2></div>
     <div class="video-grid"><article class="video glass"><button class="video-trigger" type="button" data-video="Mscfhh6rW98" data-title="Jadilah Instansi Yang Memudahkan ASN base on Lege Lex dan Jure" aria-label="Putar Jadilah Instansi Yang Memudahkan ASN base on Lege Lex dan Jure"><span class="thumb"><img src="https://i.ytimg.com/vi/Mscfhh6rW98/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">Jadilah Instansi Yang Memudahkan ASN base on Lege Lex dan Jure</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="WE-JFoLffeY" data-title="Maklumat Pelayanan" aria-label="Putar Maklumat Pelayanan"><span class="thumb"><img src="https://i.ytimg.com/vi/WE-JFoLffeY/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">Maklumat Pelayanan</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="Q3vilRaSl8g" data-title="Stop Pungli" aria-label="Putar Stop Pungli"><span class="thumb"><img src="https://i.ytimg.com/vi/Q3vilRaSl8g/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">Stop Pungli</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="XfAMThhSQuU" data-title="10 Budaya Malu Edukasi" aria-label="Putar 10 Budaya Malu Edukasi"><span class="thumb"><img src="https://i.ytimg.com/vi/XfAMThhSQuU/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">10 Budaya Malu Edukasi</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="MicRGn6luQk" data-title="Tidak Masuk Kerja Edukasi text" aria-label="Putar Tidak Masuk Kerja Edukasi text"><span class="thumb"><img src="https://i.ytimg.com/vi/MicRGn6luQk/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">Tidak Masuk Kerja Edukasi text</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="fUDJFAIjISU" data-title="ASN Profesianal" aria-label="Putar ASN Profesianal"><span class="thumb"><img src="https://i.ytimg.com/vi/fUDJFAIjISU/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">ASN Profesianal</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="jP-S4xUq5Ag" data-title="Terlambat Masuk Kerja Edukasi" aria-label="Putar Terlambat Masuk Kerja Edukasi"><span class="thumb"><img src="https://i.ytimg.com/vi/jP-S4xUq5Ag/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">Terlambat Masuk Kerja Edukasi</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="3Xfnf5bTiD0" data-title="Perceraian Edukasi text" aria-label="Putar Perceraian Edukasi text"><span class="thumb"><img src="https://i.ytimg.com/vi/3Xfnf5bTiD0/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">Perceraian Edukasi text</span></button></article><article class="video glass"><button class="video-trigger" type="button" data-video="47tvDfbhPFU" data-title="Pakaian Dinas" aria-label="Putar Pakaian Dinas"><span class="thumb"><img src="https://i.ytimg.com/vi/47tvDfbhPFU/hqdefault.jpg" alt="" loading="lazy"><span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 11 7-11 7z"/></svg></span></span><span class="video-label">Pakaian Dinas</span></button></article></div>
   </section>
   <section aria-labelledby="legal-title" class="block updates">
@@ -833,6 +898,420 @@ function showSlide(step) {
 }
 document.querySelector('#prev').addEventListener('click', () => showSlide(-1));
 document.querySelector('#next').addEventListener('click', () => showSlide(1));
+</script>
+<button type="button" class="admin-entry" id="admin-open" hidden>Admin</button>
+<dialog id="admin-dialog" class="admin-dialog admin-login-mode" aria-labelledby="admin-login-title">
+  <div class="dialog-head">
+    <h2 id="admin-title">Admin LADINI</h2>
+    <form method="dialog"><button class="icon-button" aria-label="Tutup panel admin">×</button></form>
+  </div>
+  <form id="admin-login">
+    <div class="admin-login-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 2a6.5 6.5 0 0 0-6.23 8.35L2 17.62V22h4.38L8 20.38V18h2.38l2.98-2.98A6.5 6.5 0 1 0 15.5 2Zm2 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
+    </div>
+    <h2 id="admin-login-title">Verifikasi Lisensi Akses</h2>
+    <p class="admin-login-copy">Masukkan kode akses resmi untuk membuka panel Admin LADINI.</p>
+    <div class="admin-code-field">
+      <input id="admin-code" name="code" type="password" autocomplete="current-password" aria-label="Kode akses" placeholder="KETIK KODE LISENSI..." maxlength="140" spellcheck="false" autocapitalize="none" required>
+      <button type="button" id="admin-reveal-code" class="admin-reveal-code" aria-controls="admin-code" aria-pressed="false" aria-label="Tampilkan kode akses">
+        <svg class="admin-eye" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="admin-eye-closed" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M9.9 5.2A10.5 10.5 0 0 1 12 5c6.5 0 10 7 10 7a15 15 0 0 1-3 3.8M6.2 6.2C3.6 8.2 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.8-1.2"/></svg>
+      </button>
+    </div>
+    <button class="admin-login-submit" type="submit">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V7a4 4 0 1 1 8 0"/></svg>
+      Verifikasi &amp; Masuk
+    </button>
+  </form>
+  <p id="admin-message" class="admin-message" aria-live="polite"></p>
+  <div id="admin-dashboard" hidden>
+    <div class="admin-line"><strong id="admin-account"></strong><button class="button profile-button" type="button" id="admin-logout">Keluar</button></div>
+    <section class="admin-section" aria-labelledby="admin-content-title">
+      <h3 id="admin-content-title">Kelola tautan</h3>
+      <form id="admin-item" class="admin-fields">
+        <label>Kategori
+          <select name="kind">
+            <option value="video">Video edukasi</option>
+            <option value="layanan">Layanan</option>
+            <option value="informasi">Informasi</option>
+            <option value="pengumuman">Pengumuman</option>
+            <option value="tautan">Tautan lainnya</option>
+          </select>
+        </label>
+        <label>Judul<input name="title" type="text" maxlength="160" required></label>
+        <label class="admin-wide">Alamat tautan<input name="url" type="url" maxlength="2048" placeholder="https://" required></label>
+        <label class="admin-wide">Deskripsi (opsional)<textarea name="description" maxlength="700" rows="2"></textarea></label>
+        <div class="admin-line admin-wide"><button id="admin-save" class="button profile-button" type="submit">Tambah tautan</button>
+          <button id="admin-cancel" class="button profile-button" type="button" hidden>Batal mengedit</button></div>
+      </form>
+      <ul class="admin-list" id="admin-items"></ul>
+    </section>
+    <section id="admin-accounts-section" class="admin-section" aria-labelledby="admin-accounts-title" hidden>
+      <h3 id="admin-accounts-title">Akun editor</h3>
+      <form id="admin-create-account">
+        <label>Nama editor<input name="name" type="text" autocomplete="off" maxlength="80" required></label>
+        <button class="button profile-button" type="submit">Buat kode akses</button>
+      </form>
+      <div class="admin-code-box" id="admin-created-code" hidden>
+        <label>Kode baru. Salin sebelum menutup panel.<input id="admin-generated-code" type="text" readonly></label>
+        <button class="button profile-button" type="button" id="admin-copy-code">Salin kode</button>
+      </div>
+      <ul class="admin-list" id="admin-accounts"></ul>
+    </section>
+  </div>
+</dialog>
+<template id="visitor-widget-template">
+  <section class="glass visitor-widget block" aria-labelledby="visitor-title" id="statistik">
+    <div class="section-head"><h2 id="visitor-title">Statistik pengunjung</h2><small>Waktu Jakarta</small></div>
+    <dl>
+      <div><dt>Sedang online</dt><dd data-stat="online">–</dd></div>
+      <div><dt>Pengunjung hari ini</dt><dd data-stat="visitors_today">–</dd></div>
+      <div><dt>Tayangan hari ini</dt><dd data-stat="views_today">–</dd></div>
+      <div><dt>Pengunjung bulan ini</dt><dd data-stat="visitors_month">–</dd></div>
+      <div><dt>Pengunjung bulan lalu</dt><dd data-stat="visitors_last_month">–</dd></div>
+      <div><dt>Total tayangan</dt><dd data-stat="views_total">–</dd></div>
+      <div><dt>Total pengunjung</dt><dd data-stat="visitors_total">–</dd></div>
+    </dl>
+  </section>
+</template>
+
+<script>(() => {
+  const apiBase = document.querySelector('meta[name="ladini-api"]').content;
+  const localPreview = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
+  if (!apiBase && !localPreview) return;
+  const root = apiBase || location.origin;
+  const activate = (id) => document.getElementById(id);
+  const dialog = activate('admin-dialog');
+  const login = activate('admin-login');
+  const loginCode = activate('admin-code');
+  const reveal = activate('admin-reveal-code');
+  const dashboard = activate('admin-dashboard');
+  const itemForm = activate('admin-item');
+  const accountForm = activate('admin-create-account');
+  const message = activate('admin-message');
+  const codeBox = activate('admin-created-code');
+  const codeInput = activate('admin-generated-code');
+  const labels = {
+    video: 'Video edukasi', layanan: 'Layanan', informasi: 'Informasi',
+    pengumuman: 'Pengumuman', tautan: 'Tautan lainnya'
+  };
+  let session = '';
+  let editing = '';
+
+  function element(tag, content, className) {
+    const node = document.createElement(tag);
+    if (content) node.textContent = content;
+    if (className) node.className = className;
+    return node;
+  }
+
+  function notice(text, error = false) {
+    message.textContent = text;
+    message.dataset.error = String(error);
+  }
+
+  async function request(path, { method = 'GET', body, auth = false } = {}) {
+    const headers = {};
+    if (auth) headers.Authorization = 'Bearer ' + session;
+    if (body) headers['Content-Type'] = 'application/json';
+    const response = await fetch(root + '/api/' + path, { method, headers, body: body && JSON.stringify(body) });
+    if (response.status === 204) return;
+    const result = await response.json();
+    if (!response.ok) {
+      if (auth && response.status === 401) signedOut();
+      throw new Error(result.error || 'Permintaan tidak berhasil.');
+    }
+    return result;
+  }
+
+  function clearEdit() {
+    editing = '';
+    itemForm.reset();
+    activate('admin-save').textContent = 'Tambah tautan';
+    activate('admin-cancel').hidden = true;
+  }
+
+  function signedOut() {
+    session = '';
+    login.reset();
+    showCode(false);
+    login.hidden = false;
+    dashboard.hidden = true;
+    dialog.classList.add('admin-login-mode');
+    dialog.setAttribute('aria-labelledby', 'admin-login-title');
+    codeBox.hidden = true;
+    codeInput.value = '';
+    clearEdit();
+  }
+
+  async function run(control, operation) {
+    control.disabled = true;
+    notice('');
+    try {
+      await operation();
+    } catch (error) {
+      notice(error instanceof Error && error.message !== 'Failed to fetch' ? error.message : 'Layanan admin tidak dapat dihubungi.', true);
+    } finally {
+      control.disabled = false;
+    }
+  }
+
+  function action(label, operation) {
+    const button = element('button', label, 'button profile-button');
+    button.type = 'button';
+    button.addEventListener('click', () => run(button, operation));
+    return button;
+  }
+
+  function row(title, detail, ...actions) {
+    const li = element('li');
+    const content = element('div');
+    content.append(element('strong', title), element('small', detail));
+    li.append(content, ...actions);
+    return li;
+  }
+
+  async function refreshDashboard() {
+    const { account, items, accounts } = await request('admin', { auth: true });
+    login.hidden = true;
+    dashboard.hidden = false;
+    dialog.classList.remove('admin-login-mode');
+    dialog.setAttribute('aria-labelledby', 'admin-title');
+    activate('admin-account').textContent = account.name + ' · ' + (account.role === 'owner' ? 'Pemilik' : 'Editor');
+    activate('admin-accounts-section').hidden = account.role !== 'owner';
+    activate('admin-items').replaceChildren(...(items.length ? items.map((item) => row(item.title, labels[item.kind],
+      action('Edit', async () => {
+        editing = item.id;
+        for (const field of ['kind', 'title', 'url', 'description']) itemForm.elements[field].value = item[field];
+        activate('admin-save').textContent = 'Simpan perubahan';
+        activate('admin-cancel').hidden = false;
+        itemForm.elements.title.focus();
+      }),
+      action('Hapus', async () => {
+        if (!window.confirm('Hapus tautan “' + item.title + '”?')) return;
+        await request('admin/content/' + item.id, { method: 'DELETE', auth: true });
+        if (editing === item.id) clearEdit();
+        await Promise.all([refreshDashboard(), refreshContent()]);
+        notice('Tautan dihapus.');
+      })
+    )) : [row('Belum ada tautan tambahan.', '')]));
+
+    activate('admin-accounts').replaceChildren(...accounts.map((account) => {
+      const disabled = account.disabled ? 'Dicabut' : account.role === 'owner' ? 'Pemilik' : 'Editor aktif';
+      if (account.role !== 'editor' || account.disabled) return row(account.name, disabled);
+      return row(account.name, disabled, action('Cabut akses', async () => {
+        if (!window.confirm('Cabut akses untuk “' + account.name + '”?')) return;
+        await request('admin/accounts/' + account.id, { method: 'DELETE', auth: true });
+        await refreshDashboard();
+        notice('Akses dicabut.');
+      }));
+    }));
+  }
+
+  const adminButton = activate('admin-open');
+  function showCode(visible) {
+    loginCode.type = visible ? 'text' : 'password';
+    reveal.setAttribute('aria-pressed', String(visible));
+    reveal.setAttribute('aria-label', visible ? 'Sembunyikan kode akses' : 'Tampilkan kode akses');
+  }
+  reveal.addEventListener('click', () => showCode(loginCode.type === 'password'));
+  adminButton.hidden = false;
+  adminButton.addEventListener('click', () => {
+    notice('');
+    dialog.showModal();
+  });
+  dialog.addEventListener('close', () => {
+    codeBox.hidden = true;
+    codeInput.value = '';
+    login.reset();
+    showCode(false);
+  });
+  login.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const code = login.elements.code.value;
+    void run(event.submitter, async () => {
+      const result = await request('login', { method: 'POST', body: { code } });
+      session = result.session;
+      login.reset();
+      showCode(false);
+      await refreshDashboard();
+    });
+  });
+  activate('admin-logout').addEventListener('click', (event) => {
+    void run(event.currentTarget, async () => {
+      await request('admin/logout', { method: 'POST', auth: true });
+      signedOut();
+    });
+  });
+  activate('admin-cancel').addEventListener('click', clearEdit);
+  itemForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const body = Object.fromEntries(new FormData(itemForm));
+    void run(event.submitter, async () => {
+      await request(editing ? 'admin/content/' + editing : 'admin/content', {
+        auth: true, method: editing ? 'PATCH' : 'POST', body
+      });
+      clearEdit();
+      await Promise.all([refreshDashboard(), refreshContent()]);
+      notice('Tautan tersimpan dan sudah tampil di LADINI.');
+    });
+  });
+  accountForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const body = Object.fromEntries(new FormData(accountForm));
+    void run(event.submitter, async () => {
+      const result = await request('admin/accounts', { method: 'POST', auth: true, body });
+      codeInput.value = result.code;
+      codeBox.hidden = false;
+      accountForm.reset();
+      await refreshDashboard();
+    });
+  });
+  activate('admin-copy-code').addEventListener('click', () => {
+    codeInput.select();
+    navigator.clipboard.writeText(codeInput.value).then(() => notice('Kode disalin.'),
+      () => notice('Kode dipilih. Salin secara manual.'));
+  });
+
+  function externalLink(item) {
+    const anchor = element('a', '', 'managed-link');
+    const url = new URL(item.url);
+    if (url.protocol !== 'https:') return anchor;
+    anchor.href = url.href;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.dataset.managed = 'true';
+    anchor.append(element('strong', item.title));
+    if (item.description) anchor.append(element('small', item.description));
+    return anchor;
+  }
+
+  function addExternal(item, target, wrapped = false) {
+    const link = externalLink(item);
+    if (!link.hasAttribute('href') || !target) return;
+    const block = element(wrapped ? 'li' : 'article', '', wrapped ? '' : 'service glass');
+    block.dataset.managed = 'true';
+    block.append(link);
+    target.append(block);
+  }
+
+  function addVideo(item) {
+    const article = element('article', '', 'video glass');
+    article.dataset.managed = 'true';
+    const button = element('button', '', 'video-trigger');
+    button.type = 'button';
+    button.setAttribute('aria-label', 'Putar ' + item.title);
+    button.dataset.title = item.title;
+    button.dataset.video = item.youtube_id || '';
+    button.dataset.videoUrl = item.url;
+    const thumb = element('span', '', 'thumb');
+    if (/^[\w-]{11}$/.test(item.youtube_id || '')) {
+      const image = element('img');
+      image.alt = '';
+      image.loading = 'lazy';
+      image.src = 'https://i.ytimg.com/vi/' + item.youtube_id + '/hqdefault.jpg';
+      thumb.append(image);
+    }
+    thumb.append(element('span', '▶'));
+    button.append(thumb, element('span', item.title, 'video-label'));
+    button.addEventListener('click', () => {
+      if (button.dataset.video) {
+        openVideo(button);
+        return;
+      }
+      const url = new URL(item.url);
+      if (url.protocol !== 'https:') return;
+      lastVideoButton = button;
+      videoHeading.textContent = item.title;
+      const player = element('video');
+      player.src = url.href;
+      player.playsInline = true;
+      player.controls = true;
+      videoStage.replaceChildren(player);
+      videoDialog.showModal();
+      void player.play().catch(() => {});
+    });
+    article.append(button);
+    document.querySelector('.video-grid').append(article);
+  }
+
+  async function refreshContent() {
+    const { items } = await request('content');
+    for (let i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].dataset.managed) entries.splice(i, 1);
+    }
+    document.querySelectorAll('[data-managed]').forEach((node) => node.remove());
+    const extras = activate('managed-extras');
+    extras.hidden = true;
+    for (const item of items) {
+      if (item.kind === 'video') {
+        addVideo(item);
+      } else if (item.kind === 'layanan' || item.kind === 'informasi') {
+        addExternal(item, document.querySelector('[data-directory-page="' + item.kind + '"] .directory-grid'));
+        addExternal(item, document.querySelector('.nav-group > a[href="#' + item.kind + '"] + details ul'), true);
+        if (item.kind === 'layanan') addExternal(item, document.querySelector('.service-grid'));
+        else addExternal(item, document.querySelector('#home-view .topics'), true);
+      } else {
+        addExternal(item, extras.querySelector('ul'), true);
+        extras.hidden = false;
+      }
+    }
+    entries.push(...document.querySelectorAll('.directory-grid .managed-link'));
+  }
+
+  const widget = activate('visitor-widget-template').content.cloneNode(true);
+  activate('home-view').append(widget);
+  const numberFormat = new Intl.NumberFormat('id-ID');
+  async function refreshStats() {
+    const stats = await request('stats');
+    document.querySelectorAll('[data-stat]').forEach((stat) => {
+      stat.textContent = numberFormat.format(stats[stat.dataset.stat]);
+    });
+  }
+
+  let visitor = crypto.randomUUID();
+  try {
+    const stored = localStorage.getItem('ladini-visitor-v1');
+    if (/^[0-9a-f-]{36}$/i.test(stored || '')) visitor = stored;
+    else localStorage.setItem('ladini-visitor-v1', visitor);
+  } catch {
+    // A browser with blocked storage receives a temporary visitor identifier.
+  }
+  let lastPage;
+  let sending = false;
+  const pending = [];
+
+  async function visit() {
+    if (document.hidden) return;
+    const path = location.hash.slice(1).split('?', 1)[0];
+    const page = path === 'profil' || directoryPages.has(path) ? path : 'beranda';
+    if (page !== lastPage) {
+      pending.push(crypto.randomUUID());
+      lastPage = page;
+      if (pending.length > 25) pending.shift();
+    }
+    if (sending) return;
+    sending = true;
+    try {
+      if (!pending.length) await request('visit', { method: 'POST', body: { visitor } });
+      while (pending.length) {
+        await request('visit', { method: 'POST', body: { visitor, view: pending[0] } });
+        pending.shift();
+      }
+      await refreshStats();
+    } catch {
+      // Keep unreported page views queued until the next heartbeat.
+    } finally {
+      sending = false;
+    }
+  }
+
+  window.addEventListener('hashchange', visit);
+  document.addEventListener('visibilitychange', visit);
+  window.setInterval(visit, 60000);
+  void refreshContent().catch(() => {});
+  void visit();
+})();
 </script>
 </body>
 </html>

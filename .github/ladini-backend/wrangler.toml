@@ -1,0 +1,12 @@
+name = "ladini-api"
+main = "worker.mjs"
+compatibility_date = "2026-10-01"
+
+[vars]
+SITE_ORIGIN = "https://aliefneutron.my.id"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ladini"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

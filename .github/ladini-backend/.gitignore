@@ -1,0 +1,6 @@
+.dev.vars*
+.env*
+.wrangler/
+*.sqlite
+*.sqlite-*
+/index.html
