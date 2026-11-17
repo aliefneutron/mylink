@@ -1,8 +1,6 @@
 /* Tempel ke Apps Script milik spreadsheet, lalu jalankan siapkanSAPA sekali. */
 var SAPA_SHEET_ID = '1Ko90jp7tlq6q4ZsBJaUOQTG2oBdMWNHGhNuOourgd10';
 var SAPA_TAB = 'Pemesanan SAPA';
-var SAPA_LEGACY_ID = '1T6Hs4KLAMvxOO-mMmAt7xKDlJLCRHNqBvMMUH2cXKdg';
-var SAPA_LEGACY_TAB = 'Kegiatan Harian Bidang';
 var SAPA_ZONE = 'Asia/Jakarta'; // Hari kalender ruangan di Sumenep, bukan zona perangkat pemesan.
 var SAPA_FIELDS = ['ID SAPA','Status SAPA','ID Permintaan SAPA','Dibuat SAPA','Diperbarui SAPA'];
 var SAPA_DEPARTMENTS = ['Sekretariat','Pelayanan Kesehatan','Kesehatan Masyarakat','Sumber Daya Kesehatan','Pengendalian Penduduk dan keluarga Berencana','Pencegahan dan Pengendalian Penyakit'];
@@ -23,43 +21,12 @@ function siapkanSAPA() {
     var extra=sheet.getRange(2,22,sheet.getLastRow()-1,5).getValues();
     if (!headers[21] && extra.some(function(row){return row.some(function(cell){return cell!=='';});})) throw new Error('Kolom V–Z berisi data. Pengaktifan dihentikan.');
   }
-  // Semua pemesanan wajib melalui SAPA agar pemeriksaan bentrok tidak dapat dilewati.
-  var legacy=SpreadsheetApp.openById(SAPA_LEGACY_ID);
-  var formUrl = legacy.getFormUrl();
-  if (formUrl) {
-    var form=FormApp.openByUrl(formUrl);
-    form.setCustomClosedFormMessage('Penjadwalan kegiatan sekarang melalui SAPA di https://aliefneutron.my.id/ladini/#layanan/penjadwalan-kegiatan');
-    form.setAcceptingResponses(false);
-  }
   sheet.getRange(1,22,1,5).setValues([SAPA_FIELDS]);
   var properties=PropertiesService.getScriptProperties();
-  properties.setProperty('SAPA_LEGACY_FORM_URL',formUrl||'');
-  sapaImportLegacy_(legacy.getSheetByName(SAPA_LEGACY_TAB),sheet);
   if (!properties.getProperty('SAPA_KEY')) properties.setProperty('SAPA_KEY','SAPA-'+Utilities.getUuid()+'-'+Utilities.getUuid());
   properties.setProperty('SAPA_READY','1');
   SpreadsheetApp.flush();
   console.log('SAPA siap. Salin SAPA_KEY dari Project Settings → Script Properties, bukan dari log. Deploy sebagai Web App: Execute as Me, akses Anyone.');
-}
-function sapaLegacyId_(row) {return '11111111-1111-4111-8111-'+('000000000000'+row).slice(-12);}
-function sapaImportLegacy_(source,destination) {
-  if(!source)throw new Error('Tab arsip lama tidak ditemukan. Pemeriksaan jadwal lama belum selesai.');
-  var lock=LockService.getScriptLock();
-  if(!lock.tryLock(20000))throw new Error('Ada proses SAPA lain. Coba pengaktifan kembali.');
-  try {
-    var today=Utilities.formatDate(new Date(),SAPA_ZONE,'yyyy-MM-dd');
-    var existing=sapaRows_().map(function(row){return row.id;});
-    var rows=source.getLastRow()>1?source.getRange(2,1,source.getLastRow()-1,26).getValues():[];
-    rows.forEach(function(row,index){
-      var start=sapaDate_(row[2]),end=sapaDate_(row[3])||start,id=sapaLegacyId_(index+2);
-      if(!start||end<today||sapaRoom_(row[8])==='other'||String(row[22]).toLowerCase()==='dibatalkan'||existing.indexOf(id)>=0)return;
-      // Preserve overlapping legacy reservations for admin review; do not silently cancel them.
-      row[21]=id;row[22]='aktif';row[23]=id;row[24]=row[0]||new Date();row[25]=new Date();
-      var next=destination.getLastRow()+1;
-      if(next>destination.getMaxRows())destination.insertRowsAfter(destination.getMaxRows(),100);
-      destination.getRange(next,1,1,26).setValues([row]);existing.push(id);
-    });
-    SpreadsheetApp.flush();
-  }finally{lock.releaseLock();}
 }
 function sapaDate_(value) {
   if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value,SAPA_ZONE,'yyyy-MM-dd');
@@ -131,11 +98,7 @@ function sapaHandle_(input) {
   var props=PropertiesService.getScriptProperties();
   if(!props.getProperty('SAPA_KEY')||input.key!==props.getProperty('SAPA_KEY'))sapaFail_(401,'Kunci penghubung tidak valid.');
   if(props.getProperty('SAPA_READY')!=='1')sapaFail_(503,'Jalankan siapkanSAPA terlebih dahulu.');
-  if(['health','book','edit'].indexOf(input.action)>=0) {
-    var formUrl=props.getProperty('SAPA_LEGACY_FORM_URL');
-    if(formUrl&&FormApp.openByUrl(formUrl).isAcceptingResponses())sapaFail_(503,'Google Form lama masih menerima jawaban. Tutup penerimaannya agar pemesanan tidak melewati pemeriksaan SAPA.');
-  }
-  if(input.action==='health')return {ok:true,version:2,spreadsheetId:SAPA_SHEET_ID};
+  if(input.action==='health')return {ok:true,version:3,spreadsheetId:SAPA_SHEET_ID};
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(20000))sapaFail_(503,'Ada pemesanan lain yang sedang diproses. Coba kembali.');
   try {

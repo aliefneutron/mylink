@@ -8,7 +8,7 @@ import { validateBooking } from './sapa.mjs';
 const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const day=offset=>new Date(Date.parse(today)+offset*86400000).toISOString().slice(0,10);
 const data=[['Timestamp','1. Penanggungjawab Kegiatan','','','','','','','8. Lokasi Kegiatan']];
-let locked=false,denyLock=false,accepting=true;
+let locked=false,denyLock=false;
 const properties=new Map();
 const sheet={
   getLastRow:()=>data.length,
@@ -26,11 +26,8 @@ const sheet={
     };
   }
 };
-const legacyData=[data[0]];
-const legacySheet={getLastRow:()=>legacyData.length,getRange(row,col,height=1,width=1){return {getValues:()=>Array.from({length:height},(_,i)=>Array.from({length:width},(_,j)=>legacyData[row-1+i]?.[col-1+j]??''))};}};
 const context=vm.createContext({Date,console:{log(){}},
-  SpreadsheetApp:{openById:id=>({getSheetByName:()=>id==='1T6Hs4KLAMvxOO-mMmAt7xKDlJLCRHNqBvMMUH2cXKdg'?legacySheet:sheet,getFormUrl:()=> 'https://docs.google.com/forms/d/test/edit'}),flush(){}},
-  FormApp:{openByUrl:()=>({setCustomClosedFormMessage(){},setAcceptingResponses(value){accepting=value;},isAcceptingResponses:()=>accepting})},
+  SpreadsheetApp:{openById(id){assert.equal(id,'1Ko90jp7tlq6q4ZsBJaUOQTG2oBdMWNHGhNuOourgd10','Only the new spreadsheet may be accessed');return {getSheetByName:()=>sheet};},flush(){}},
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>properties.get(key),setProperty(key,value){properties.set(key,value);}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate(value,zone,format){
     if(format==='HH:mm')return new Intl.DateTimeFormat('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(value);
@@ -41,7 +38,6 @@ const context=vm.createContext({Date,console:{log(){}},
 });
 vm.runInContext(readFileSync(new URL('SAPA-Spreadsheet.gs',import.meta.url),'utf8'),context);
 context.siapkanSAPA();
-assert.equal(accepting,false);
 assert.equal(data[0][21],'ID SAPA');
 const bridgeKey=properties.get('SAPA_KEY');
 function bridge(input){return JSON.parse(context.doPost({postData:{contents:JSON.stringify({key:bridgeKey,...input})}}).value);}
@@ -82,14 +78,10 @@ assert.equal(bridge({action:'availability',start:day(16),end:day(16)}).available
 assert.equal(bridge({action:'availability',start:day(18),end:day(18)}).available,true);
 assert.equal(bridge({action:'availability',start:day(19),end:day(19)}).available,false,'Ambiguous old Dinkes rooms require admin review');
 denyLock=true;assert.equal(bridge({action:'book',value:{...booking(),start:day(21),end:day(21)}}).status,503);denyLock=false;
-accepting=true;assert.equal(bridge({action:'book',value:{...booking(),start:day(21),end:day(21)}}).status,503,'Reopened old Google Form must block new bookings');accepting=false;
-const old=new Array(26).fill('');old[0]=new Date();old[1]='Pesanan arsip';old[2]=new Date(day(28)+'T12:00:00+07:00');old[3]=old[2];old[6]='Rapat arsip';old[8]='Ruang Lingkar Barat';
-legacyData.push(old);
+const countBeforeSetup=data.length;
 context.siapkanSAPA();
-assert.equal(data.filter(row=>row[21]==='11111111-1111-4111-8111-000000000002').length,1);
-context.siapkanSAPA();
-assert.equal(data.filter(row=>row[21]==='11111111-1111-4111-8111-000000000002').length,1,'Setup must not duplicate legacy imports');
-assert.equal(bridge({action:'availability',start:day(28),end:day(28)}).available,false,'Migrated reservations block the new sheet');
+assert.equal(data.length,countBeforeSetup,'Setup does not import or delete reservations');
+assert.equal(bridge({action:'health'}).version,3);
 
 const db=new DatabaseSync(':memory:');
 for(const file of ['0001_init.sql','0002_gallery.sql','0003_visit_time.sql','0004_link_overrides.sql','0005_text_overrides.sql','0006_site_settings.sql','0007_sapa.sql','0008_image_purpose.sql'])db.exec(readFileSync(new URL('migrations/'+file,import.meta.url),'utf8'));
@@ -129,5 +121,5 @@ try {
   assert.ok(logo.id);
   assert.equal((await api('images',200)).images.length,0,'Uploaded logo stays out of public gallery');
   await api('admin/content',204,{method:'POST',session,body:{kind:'tautan',title:'Still works',url:'https://example.com'}});
-  console.log('Lulus SAPA: pemetaan kolom, seharian, rentang tanggal, data lama, idempotensi, edit/batal, penguncian, form lama ditutup, proxy, enkripsi, otorisasi, dan logo terpisah dari galeri.');
+  console.log('Lulus SAPA: hanya spreadsheet baru, tanpa Google Form atau sumber lain, seharian, rentang tanggal, idempotensi, edit/batal, penguncian, proxy, enkripsi, otorisasi, dan logo terpisah dari galeri.');
 } finally {globalThis.fetch=realFetch;db.close();}
