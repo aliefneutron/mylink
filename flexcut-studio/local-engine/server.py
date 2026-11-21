@@ -74,6 +74,32 @@ def prepare_motion():
     engine.KERJA.jalankan("pasang", [(command, engine.MOTION)], engine.MOTION)
     return {"ok": True}
 
+def clone_voice(data):
+    """Kloning suara lokal dengan VoxCPM2 (tanpa API). Hanya mode lokal."""
+    if REMOTE:
+        raise ValueError("Kloning VoxCPM hanya tersedia pada mesin lokal.")
+    if not data.get("izin"):
+        raise ValueError("Centang pernyataan izin pemakaian suara.")
+    uploads = (DATA / "unggahan").resolve()
+    ref = Path(str(data.get("referensi", ""))).resolve()
+    if not ref.is_file() or not ref.is_relative_to(uploads):
+        raise ValueError("Rekaman referensi harus diunggah lewat FlexCut.")
+    text = str(data.get("teks", "")).strip()
+    if not text or len(text) > 1000:
+        raise ValueError("Teks narasi wajib diisi, maksimal 1000 karakter.")
+    if not engine.voxcpm_terpasang():
+        raise ValueError("VoxCPM2 belum dipasang. Klik Pasang VoxCPM2 terlebih dahulu.")
+    folder = new_project("motion")
+    out = folder / "voice.wav"
+    cmd = [engine.cari_uv(), "run", "-q", str(engine.SUARA / "suara.py"),
+           "--teks", text, "--keluar", str(out), "--referensi", str(ref)]
+    engine.KERJA.jalankan(
+        "suara", [(cmd, engine.SUARA)], folder,
+        setelah=lambda k: setattr(k, "hasil", {
+            "jenis": "motion", "nama": folder.name,
+            "audio": f"/berkas/motion/{folder.name}/voice.wav"}))
+    return {"ok": True}
+
 class Handler(engine.H):
     def _file(self, path):
         if not path.is_file():
@@ -119,7 +145,7 @@ class Handler(engine.H):
             pass
 
     def _json(self, obj, kode=200):
-        starts = {"/api/motion", "/api/klip", "/api/klip-render", "/api/siapkan"}
+        starts = {"/api/motion", "/api/klip", "/api/klip-render", "/api/siapkan", "/api/flexcut/klon-suara"}
         if self.command == "POST" and self.path in starts and kode == 200:
             obj = {**obj, "jobid": engine.KERJA.id}
         if kode == 403:
@@ -237,9 +263,11 @@ class Handler(engine.H):
             if path == "/api/siapkan":
                 data = self._body()
                 component = data.get("komponen")
-                if component not in {"motion", "klip"}:
-                    raise ValueError("Pilih komponen Motion atau Klip.")
+                if component not in {"motion", "klip", "voxcpm"}:
+                    raise ValueError("Pilih komponen Motion, Klip, atau VoxCPM.")
                 return self._json(prepare_motion() if component == "motion" else engine.siapkan(component))
+            if path == "/api/flexcut/klon-suara":
+                return self._json(clone_voice(self._body()))
             if path == "/api/motion":
                 data = self._body()
                 if data.get("gaya") not in {row["id"] for row in CATALOG}:

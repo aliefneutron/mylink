@@ -173,7 +173,7 @@ function malikiManualCut(toTimeline){
   }}:{})});
 }
 async function showMalikiWorkbench(view='motion'){
- if(view==='voice')return showVoicebox();
+ if(view==='voice')return showVoxcpm();
  if(job||exporting||captureSession)return toast('Selesaikan proses yang berjalan terlebih dahulu.');
  pause();malikiView=view;
  if(view==='motion'){try{await loadMalikiTemplates()}catch(error){return toast(error.message)}}

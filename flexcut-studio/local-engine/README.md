@@ -23,6 +23,10 @@ Mode lokal menerima naskah JSON atau menyusun poin dari template gratis. Ollama 
 
 API key disimpan pada ~/FlexCut Studio/pengaturan.env. Folder ini juga menyimpan hasil dan mesin render. Jangan unggah folder data tersebut ke GitHub.
 
+## Kloning suara lokal (VoxCPM2, tanpa API)
+
+Di FlexCut, buka **Motion & Klip → Kloning suara**. Panel ini memakai VoxCPM2 (OpenBMB, Apache-2.0) yang berjalan di komputer Anda lewat mesin lokal. Klik **Pasang VoxCPM2** sekali (unduhan ±5 GB), unggah rekaman 10–20 detik, tulis narasi, centang pernyataan izin, lalu klik **Buat narasi**. Tidak perlu transkrip, API key, atau server. Hanya tersedia pada mesin lokal, tidak pada mode server. Gunakan hanya suara sendiri atau suara yang sudah memberi izin, dan beri label "suara AI" saat mengunggah hasilnya.
+
 ## Kloning suara lewat Voicebox
 
 Di FlexCut, buka **Motion & Klip → Kloning suara**. Masukkan alamat HTTPS server Voicebox, pilih bahasa dan model, lalu unggah rekaman referensi beserta transkripnya. Setelah proses selesai, unduh WAV atau tambahkan ke timeline.
