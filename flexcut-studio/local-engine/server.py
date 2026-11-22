@@ -74,12 +74,56 @@ def prepare_motion():
     engine.KERJA.jalankan("pasang", [(command, engine.MOTION)], engine.MOTION)
     return {"ok": True}
 
-def clone_voice(data):
-    """Kloning suara lokal dengan VoxCPM2 (tanpa API). Hanya mode lokal."""
+POCKET_REV = "17257664e384561c957b02ac92edd1a24807f0e5"
+POCKET_CONFIG = f"hf://anak10thn/pocket-tts-indonesian/indonesian_6l.yaml@{POCKET_REV}"
+POCKET_DIR = APP / "local-engine"
+_ONES = ["nol", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"]
+
+def pocket_installed():
+    hub = Path(os.environ.get("HF_HUB_CACHE") or (Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"))
+    return any((hub / "models--anak10thn--pocket-tts-indonesian").glob("snapshots/*/6l/model.safetensors"))
+
+def spell_number(n):
+    """Angka ke kata bahasa Indonesia (Pocket TTS tidak mengenali digit)."""
+    def rest(value, word):
+        return (" " + word(value)) if value else ""
+    if n < 12:
+        return _ONES[n]
+    if n < 20:
+        return _ONES[n - 10] + " belas"
+    if n < 100:
+        return _ONES[n // 10] + " puluh" + rest(n % 10, spell_number)
+    if n < 200:
+        return "seratus" + rest(n - 100, spell_number)
+    if n < 1000:
+        return _ONES[n // 100] + " ratus" + rest(n % 100, spell_number)
+    if n < 2000:
+        return "seribu" + rest(n - 1000, spell_number)
+    for size, name in ((10**12, "triliun"), (10**9, "miliar"), (10**6, "juta"), (10**3, "ribu")):
+        if n >= size:
+            return spell_number(n // size) + " " + name + rest(n % size, spell_number)
+    return str(n)
+
+def prepare_pocket_text(text):
+    text = text.replace("!", ".")
+    return re.sub(r"\d+", lambda m: spell_number(int(m.group())) if len(m.group()) <= 15 else " ".join(_ONES[int(c)] for c in m.group()), text)
+
+def prepare_pocket():
     if REMOTE:
-        raise ValueError("Kloning VoxCPM hanya tersedia pada mesin lokal.")
+        raise ValueError("Pengunduhan model hanya tersedia pada mesin lokal.")
+    cmd = [engine.cari_uv(), "run", "--python", "3.12", "-q", str(POCKET_DIR / "pocket_siapkan.py")]
+    engine.KERJA.jalankan("pasang", [(cmd, POCKET_DIR)], DATA)
+    return {"ok": True}
+
+def clone_voice(data):
+    """Kloning suara lokal tanpa API: Pocket TTS Indonesian (ringan) atau VoxCPM2 (kualitas tinggi)."""
+    if REMOTE:
+        raise ValueError("Kloning suara lokal hanya tersedia pada mesin lokal.")
     if not data.get("izin"):
         raise ValueError("Centang pernyataan izin pemakaian suara.")
+    mesin = data.get("mesin") or "voxcpm"
+    if mesin not in {"pocket", "voxcpm"}:
+        raise ValueError("Pilih mesin Pocket TTS atau VoxCPM2.")
     uploads = (DATA / "unggahan").resolve()
     ref = Path(str(data.get("referensi", ""))).resolve()
     if not ref.is_file() or not ref.is_relative_to(uploads):
@@ -87,14 +131,25 @@ def clone_voice(data):
     text = str(data.get("teks", "")).strip()
     if not text or len(text) > 1000:
         raise ValueError("Teks narasi wajib diisi, maksimal 1000 karakter.")
-    if not engine.voxcpm_terpasang():
-        raise ValueError("VoxCPM2 belum dipasang. Klik Pasang VoxCPM2 terlebih dahulu.")
     folder = new_project("motion")
     out = folder / "voice.wav"
-    cmd = [engine.cari_uv(), "run", "-q", str(engine.SUARA / "suara.py"),
-           "--teks", text, "--keluar", str(out), "--referensi", str(ref)]
+    if mesin == "pocket":
+        if not pocket_installed():
+            raise ValueError("Model Pocket TTS belum diunduh. Klik Unduh model terlebih dahulu.")
+        if ref.suffix.lower() != ".wav":
+            raise ValueError("Mode ringan memerlukan rekaman WAV.")
+        cmd = [engine.cari_uv(), "run", "--python", "3.12", "--no-project", "--with", "pocket-tts",
+               "pocket-tts", "generate", "--config", POCKET_CONFIG, "--voice", str(ref),
+               "--text=" + prepare_pocket_text(text), "--eos-threshold=-6.0", "--output-path", str(out)]
+        cwd = POCKET_DIR
+    else:
+        if not engine.voxcpm_terpasang():
+            raise ValueError("VoxCPM2 belum dipasang. Klik Unduh model terlebih dahulu.")
+        cmd = [engine.cari_uv(), "run", "-q", str(engine.SUARA / "suara.py"),
+               "--teks", text, "--keluar", str(out), "--referensi", str(ref)]
+        cwd = engine.SUARA
     engine.KERJA.jalankan(
-        "suara", [(cmd, engine.SUARA)], folder,
+        "suara", [(cmd, cwd)], folder,
         setelah=lambda k: setattr(k, "hasil", {
             "jenis": "motion", "nama": folder.name,
             "audio": f"/berkas/motion/{folder.name}/voice.wav"}))
@@ -223,7 +278,7 @@ class Handler(engine.H):
             return self._file(engine.AKAR / "index.html")
         if path == "/api/flexcut/health":
             return self._json({"service": "flexcut-motion", "version": 1, "templates": len(CATALOG),
-                               "voice": "Voicebox", "credit": CREDIT,
+                               "voice": "Voicebox", "voice_clone": 2, "pocket": pocket_installed(), "credit": CREDIT,
                                "system": engine.cek_sistem() if self._izin() else {}})
         if path == "/api/flexcut/asset":
             requested = parse_qs(urlparse(self.path).query).get("path", [""])[0]
@@ -263,9 +318,15 @@ class Handler(engine.H):
             if path == "/api/siapkan":
                 data = self._body()
                 component = data.get("komponen")
-                if component not in {"motion", "klip", "voxcpm"}:
-                    raise ValueError("Pilih komponen Motion, Klip, atau VoxCPM.")
-                return self._json(prepare_motion() if component == "motion" else engine.siapkan(component))
+                if component not in {"motion", "klip", "voxcpm", "pocket"}:
+                    raise ValueError("Pilih komponen Motion, Klip, VoxCPM, atau Pocket.")
+                if component == "motion":
+                    result = prepare_motion()
+                elif component == "pocket":
+                    result = prepare_pocket()
+                else:
+                    result = engine.siapkan(component)
+                return self._json(result)
             if path == "/api/flexcut/klon-suara":
                 return self._json(clone_voice(self._body()))
             if path == "/api/motion":
