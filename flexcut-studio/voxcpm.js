@@ -86,8 +86,7 @@ function showVoxcpm(){
   '<label class="checkLabel"><input id="voxConsent" type="checkbox" required> Saya memiliki izin memakai suara ini.</label>'+
   '<div class="malikiButtons"><button class="primary" type="submit">Buat narasi</button></div>'+
   '<p class="featureNote">Beri label “suara AI” saat hasilnya diunggah ke media sosial. Kredit model: VoxCPM2 (OpenBMB, Apache-2.0); Pocket TTS Indonesian (anak10thn, dasar Kyutai pocket-tts, CC-BY-4.0, data LEMAS Project).</p></form>'+
-  '<div class="actions"><button id="voxToVoicebox">Pakai Voicebox (server)</button><button id="closeModal">Tutup</button></div></div>');
- $('#voxToVoicebox').onclick=showVoicebox;
+  '<div class="actions"><button id="closeModal">Tutup</button></div></div>');
  document.querySelectorAll('input[name="voxEngine"]').forEach(input=>input.onchange=voxRender);
  voxcpmRefresh();
  $('#voxForm').onsubmit=async event=>{

@@ -278,7 +278,7 @@ class Handler(engine.H):
             return self._file(engine.AKAR / "index.html")
         if path == "/api/flexcut/health":
             return self._json({"service": "flexcut-motion", "version": 1, "templates": len(CATALOG),
-                               "voice": "Voicebox", "voice_clone": 2, "pocket": pocket_installed(), "credit": CREDIT,
+                               "voice": "lokal", "voice_clone": 2, "pocket": pocket_installed(), "credit": CREDIT,
                                "system": engine.cek_sistem() if self._izin() else {}})
         if path == "/api/flexcut/asset":
             requested = parse_qs(urlparse(self.path).query).get("path", [""])[0]

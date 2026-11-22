@@ -1,7 +1,8 @@
 # Server mesin FlexCut (tanpa instalasi lokal)
 
 Motion (Remotion) dan Klip (transkripsi, pembingkaian wajah, render) membutuhkan Node.js, Python, dan ffmpeg,
-jadi prosesnya berjalan di sebuah server. FlexCut di browser hanya mengirim perintah, sama seperti Voicebox.
+jadi prosesnya berjalan di sebuah server. FlexCut di browser hanya mengirim perintah.
+Kloning suara berjalan di mesin lokal pengguna (Pocket TTS atau VoxCPM2) dan dinonaktifkan pada mode server.
 
 ## Kebutuhan server
 - VPS Linux dengan Docker dan Docker Compose. Disarankan minimal 4 vCPU dan 8 GB RAM (render dan transkripsi berat).

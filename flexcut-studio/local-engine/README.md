@@ -40,12 +40,4 @@ Gunakan hanya suara sendiri atau suara yang sudah memberi izin, dan beri label "
 
 Kredit: VoxCPM2 oleh OpenBMB (Apache-2.0). Pocket TTS Indonesian oleh anak10thn, berdasarkan Kyutai pocket-tts, berlisensi CC-BY-4.0 dengan data latih LEMAS Project. Template suara oleh Maliki Saputra (@malikisaputra).
 
-## Kloning suara lewat Voicebox
-
-Di FlexCut, buka **Motion & Klip → Kloning suara**. Masukkan alamat HTTPS server Voicebox, pilih bahasa dan model, lalu unggah rekaman referensi beserta transkripnya. Setelah proses selesai, unduh WAV atau tambahkan ke timeline.
-
-Untuk menyiapkan server, ikuti [petunjuk Docker Voicebox](https://github.com/jamiepine/voicebox#download). Letakkan API di balik reverse proxy HTTPS dengan autentikasi Bearer dan atur `VOICEBOX_CORS_ORIGINS` ke `https://aliefneutron.my.id`. Jika FlexCut juga dibuka dari paket lokal, tambahkan `http://127.0.0.1:8791` sebagai origin dengan pemisah koma. Izinkan permintaan OPTIONS tanpa token untuk preflight CORS, dengan akses API lainnya dilindungi token.
-
-Integrasi menggunakan API `/health`, `/profiles`, `/generate`, `/history/{id}`, dan `/audio/{id}`. FlexCut meminta Voicebox menghapus profil sementara setelah pekerjaan selesai. Server Voicebox menyimpan model dan menjalankan proses kloning.
-
 Hasil WAV dan MP4 dapat dimasukkan ke timeline melalui tombol **Tambahkan ke timeline**. Klip menyediakan analisis momen, pemilihan klip, subtitle, dan pembingkaian wajah melalui mesin asli.
